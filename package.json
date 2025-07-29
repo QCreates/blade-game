@@ -8,14 +8,20 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "socket.io": "^4.7.4",
+    "cors": "^2.8.5",
     "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "socket.io": "^4.7.4"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "nodemon": "^3.0.2",
+    "tailwindcss": "^4.1.11"
   },
-  "keywords": ["websocket", "game", "multiplayer", "physics"],
+  "keywords": [
+    "websocket",
+    "game",
+    "multiplayer",
+    "physics"
+  ],
   "author": "",
   "license": "MIT"
-} 
+}

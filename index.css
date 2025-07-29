@@ -617,8 +617,7 @@ h1 {
 }
 
 .no-weapon {
-    cnpx tailwindcss -i ./src/input.css -o ./index.css --watch
-olor: #95bece;
+    color: #95bece;
     text-align: center;
     padding: 2rem 1rem;
 }

@@ -1,0 +1,2405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BladeBox Prototype</title>
+    <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        charcoal: {
+                            DEFAULT: '#264653',
+                            100: '#080e11',
+                            200: '#0f1c22',
+                            300: '#172b32',
+                            400: '#1f3943',
+                            500: '#264653',
+                            600: '#3f7489',
+                            700: '#609db6',
+                            800: '#95bece',
+                            900: '#cadee7'
+                        },
+                        persian_green: {
+                            DEFAULT: '#2a9d8f',
+                            100: '#081f1d',
+                            200: '#113f39',
+                            300: '#195e56',
+                            400: '#217e73',
+                            500: '#2a9d8f',
+                            600: '#3acbba',
+                            700: '#6cd8cb',
+                            800: '#9de5dc',
+                            900: '#cef2ee'
+                        },
+                        saffron: {
+                            DEFAULT: '#e9c46a',
+                            100: '#3b2c09',
+                            200: '#755912',
+                            300: '#b0851a',
+                            400: '#e0ad2e',
+                            500: '#e9c46a',
+                            600: '#edd086',
+                            700: '#f1dca4',
+                            800: '#f6e7c3',
+                            900: '#faf3e1'
+                        },
+                        sandy_brown: {
+                            DEFAULT: '#f4a261',
+                            100: '#401f04',
+                            200: '#803e09',
+                            300: '#c05e0d',
+                            400: '#f07e22',
+                            500: '#f4a261',
+                            600: '#f6b681',
+                            700: '#f8c8a1',
+                            800: '#fbdac0',
+                            900: '#fdede0'
+                        },
+                        burnt_sienna: {
+                            DEFAULT: '#e76f51',
+                            100: '#371107',
+                            200: '#6e220f',
+                            300: '#a43316',
+                            400: '#db441e',
+                            500: '#e76f51',
+                            600: '#ec8b73',
+                            700: '#f1a896',
+                            800: '#f5c5b9',
+                            900: '#fae2dc'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0a101c 0%, #182338 50%, #0d151e 100%);
+            --color-dark-blue: #264653;
+            --color-teal: #2a9d8f;
+            --color-yellow: #e9c46a;
+            --color-orange: #f4a261;
+            --color-burnt-sienna: #e76f51;
+        }
+
+        body { 
+            background: var(--bg-gradient) !important;
+            background-attachment: fixed !important;
+            background-size: 200% 200% !important;
+            animation: gradientMotion 15s ease infinite !important;
+            font-family: 'Inter', sans-serif;
+            color: #cadee7;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientMotion {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        .game-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 800;
+            font-size: 4rem;
+            text-align: center;
+            background: linear-gradient(135deg, #e9c46a 0%, #f4a261 50%, #e76f51 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 4px 12px rgba(233, 196, 106, 0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.25rem;
+            color: #95bece;
+            margin-bottom: 3rem;
+            font-weight: 500;
+        }
+
+        .game-layout {
+            display: grid;
+            grid-template-columns: 1fr 450px;
+            gap: 3rem;
+            align-items: start;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .arena-section {
+            background: rgba(38, 70, 83, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 2rem;
+            border: 1px solid rgba(42, 157, 143, 0.2);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .controls-panel {
+            background: rgba(38, 70, 83, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 2rem;
+            border: 1px solid rgba(42, 157, 143, 0.2);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .design-section {
+            background: rgba(42, 157, 143, 0.1);
+            border-radius: 0.75rem;
+            border: 1px solid rgba(42, 157, 143, 0.2);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(5px);
+        }
+
+        .section-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: #e9c46a;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .color-section {
+            margin-bottom: 1rem;
+        }
+
+        .color-section-label {
+            font-size: 0.875rem;
+            color: #95bece;
+            margin-bottom: 0.75rem;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .color-options {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .color-btn {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .color-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .color-btn.active {
+            border-color: #e9c46a;
+            box-shadow: 0 0 0 4px rgba(233, 196, 106, 0.3);
+            transform: translateY(-2px) scale(1.1);
+        }
+
+        .color-btn.eraser {
+            border: 2px solid #95bece;
+            background: repeating-conic-gradient(#cadee7 0% 25%, transparent 0% 50%) 50% / 12px 12px;
+        }
+
+        .current-color-info {
+            font-size: 0.875rem;
+            color: #95bece;
+            text-align: center;
+        }
+
+        .current-color-label {
+            color: #cadee7;
+            font-weight: 500;
+        }
+
+        #currentMaterialName {
+            color: #e9c46a;
+            font-weight: 700;
+        }
+
+        .canvas-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #drawCanvas {
+            border: 2px solid #2a9d8f;
+            background: rgba(202, 222, 231, 0.05);
+            border-radius: 0.75rem;
+            box-shadow: 
+                0 4px 20px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: crosshair;
+            max-width: 100%;
+            height: auto;
+        }
+
+        #drawCanvas:hover {
+            border-color: #e9c46a;
+            box-shadow: 
+                0 8px 32px rgba(233, 196, 106, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .grid-info {
+            font-size: 0.875rem;
+            color: #95bece;
+            text-align: center;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+
+        .canvas-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1.5rem 0;
+            align-items: center;
+        }
+
+        .mana-display {
+            grid-column: 1 / -1;
+            justify-self: center;
+            margin-top: 1rem;
+        }
+
+        .clear-btn, .fill-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.875rem;
+            border: none;
+            color: white;
+        }
+
+        .clear-btn {
+            background: linear-gradient(135deg, #e76f51 0%, #db441e 100%);
+            box-shadow: 0 4px 12px rgba(231, 111, 81, 0.3);
+        }
+
+        .clear-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(231, 111, 81, 0.4);
+            background: linear-gradient(135deg, #ec8b73 0%, #e76f51 100%);
+        }
+
+        .fill-btn {
+            background: linear-gradient(135deg, #2a9d8f 0%, #217e73 100%);
+            box-shadow: 0 4px 12px rgba(42, 157, 143, 0.3);
+        }
+
+        .fill-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(42, 157, 143, 0.4);
+            background: linear-gradient(135deg, #3acbba 0%, #2a9d8f 100%);
+        }
+
+        .fill-btn.active {
+            background: linear-gradient(135deg, #3acbba 0%, #2a9d8f 100%);
+            box-shadow: 0 0 0 4px rgba(42, 157, 143, 0.3);
+        }
+
+        .mana-display {
+            background: linear-gradient(135deg, #e9c46a 0%, #e0ad2e 100%);
+            color: #264653;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            font-size: 1.125rem;
+            box-shadow: 0 4px 12px rgba(233, 196, 106, 0.3);
+        }
+
+        .sound-controls {
+            margin-bottom: 1.5rem;
+        }
+
+        .sound-group {
+            padding: 1rem;
+            background: rgba(42, 157, 143, 0.1);
+            border-radius: 0.5rem;
+            border: 1px solid rgba(42, 157, 143, 0.2);
+        }
+
+        .sound-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .sound-btn {
+            background: linear-gradient(135deg, #f4a261 0%, #f07e22 100%);
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            color: #264653;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(244, 162, 97, 0.3);
+        }
+
+        .sound-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(244, 162, 97, 0.4);
+            background: linear-gradient(135deg, #f6b681 0%, #f4a261 100%);
+        }
+
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .volume-label {
+            font-size: 0.875rem;
+            color: #95bece;
+            min-width: 30px;
+            font-weight: 600;
+        }
+
+        .volume-slider {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(42, 157, 143, 0.3);
+            outline: none;
+            -webkit-appearance: none;
+            border: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e9c46a, #e0ad2e);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(233, 196, 106, 0.4);
+            border: none;
+        }
+
+        .volume-value {
+            min-width: 45px;
+            text-align: right;
+            font-size: 0.875rem;
+            color: #e9c46a;
+            font-weight: 600;
+        }
+
+        .start-btn {
+            width: 100%;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, #e76f51 0%, #f4a261 50%, #e9c46a 100%);
+            border: none;
+            border-radius: 0.75rem;
+            color: #264653;
+            font-size: 1.5rem;
+            font-weight: 800;
+            font-family: 'Space Grotesk', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(231, 111, 81, 0.4);
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(231, 111, 81, 0.5);
+        }
+
+        .start-btn:active {
+            transform: translateY(-1px);
+        }
+
+        #world {
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 2px solid #2a9d8f;
+            transition: all 0.3s ease;
+        }
+
+        .glow {
+            animation: modernGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes modernGlow {
+            from { 
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            }
+            to { 
+                box-shadow: 
+                    0 8px 32px rgba(0, 0, 0, 0.4),
+                    0 0 40px rgba(42, 157, 143, 0.3);
+            }
+        }
+
+        /* Battle Stats Panel */
+        .battle-stats {
+            margin-top: 1.5rem;
+            background: rgba(42, 157, 143, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 0.75rem;
+            border: 1px solid rgba(42, 157, 143, 0.2);
+            padding: 1.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .player-stats {
+            background: rgba(202, 222, 231, 0.05);
+            border-radius: 0.5rem;
+            border: 1px solid rgba(149, 190, 206, 0.3);
+            padding: 1rem;
+            backdrop-filter: blur(5px);
+        }
+
+        .player1-stats {
+            border-color: #2a9d8f;
+            background: linear-gradient(135deg, rgba(42, 157, 143, 0.1) 0%, rgba(202, 222, 231, 0.05) 100%);
+        }
+
+        .player2-stats {
+            border-color: #e76f51;
+            background: linear-gradient(135deg, rgba(231, 111, 81, 0.1) 0%, rgba(202, 222, 231, 0.05) 100%);
+        }
+
+        .player-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            font-size: 1.125rem;
+            color: #cadee7;
+        }
+
+        .player-icon {
+            font-size: 1.25rem;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #95bece;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .hp-value {
+            color: #e76f51;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .spin-value {
+            color: #2a9d8f;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .spin-display {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            justify-content: flex-end;
+        }
+
+        .boost-value {
+            font-size: 0.75rem;
+            color: #f4a261;
+            font-weight: 600;
+            min-width: 45px;
+        }
+
+        .battle-separator {
+            font-size: 2rem;
+            text-align: center;
+            color: #e9c46a;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        .player-toggle {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .player-btn {
+            flex: 1;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            color: #264653;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            font-size: 0.875rem;
+        }
+
+        .player-btn[data-player="1"] {
+            background: linear-gradient(135deg, #2a9d8f 0%, #217e73 100%);
+            box-shadow: 0 4px 12px rgba(42, 157, 143, 0.3);
+        }
+
+        .player-btn[data-player="2"] {
+            background: linear-gradient(135deg, #e76f51 0%, #db441e 100%);
+            box-shadow: 0 4px 12px rgba(231, 111, 81, 0.3);
+        }
+
+        .player-btn.active {
+            transform: translateY(-2px);
+            box-shadow: 0 0 0 4px rgba(233, 196, 106, 0.3);
+        }
+
+        .player-btn:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.1);
+        }
+
+        /* Player Weapons Display */
+        .player-weapons-grid {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 1.5rem;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .player-weapon-card {
+            background: rgba(202, 222, 231, 0.05);
+            border-radius: 0.75rem;
+            border: 1px solid rgba(149, 190, 206, 0.3);
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .player-weapon-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .player-weapon-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            font-size: 1.125rem;
+            color: #cadee7;
+        }
+
+        .player-icon {
+            font-size: 1.25rem;
+        }
+
+        .weapon-display {
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .weapon-preview {
+            border: 2px solid #2a9d8f;
+            border-radius: 0.5rem;
+            background: rgba(202, 222, 231, 0.05);
+            margin-bottom: 0.5rem;
+        }
+
+        .weapon-info {
+            text-align: center;
+        }
+
+        .weapon-name {
+            color: #e9c46a;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .weapon-stats {
+            color: #95bece;
+            font-size: 0.875rem;
+        }
+
+        .no-weapon {
+            color: #95bece;
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+
+        .no-weapon-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.5;
+        }
+
+        .vs-separator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #e76f51 0%, #f4a261 100%);
+            border-radius: 50%;
+            border: 3px solid rgba(233, 196, 106, 0.3);
+            box-shadow: 0 4px 20px rgba(231, 111, 81, 0.4);
+        }
+
+        .vs-text {
+            color: #264653;
+            font-weight: 800;
+            font-size: 1.25rem;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .weapon-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .btn-craft, .btn-defaults {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            font-size: 0.875rem;
+        }
+
+        .btn-craft {
+            background: linear-gradient(135deg, #e9c46a 0%, #e0ad2e 100%);
+            color: #264653;
+            box-shadow: 0 4px 12px rgba(233, 196, 106, 0.3);
+        }
+
+        .btn-craft:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(233, 196, 106, 0.4);
+        }
+
+        .btn-defaults {
+            background: linear-gradient(135deg, #2a9d8f 0%, #217e73 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(42, 157, 143, 0.3);
+        }
+
+        .btn-defaults:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(42, 157, 143, 0.4);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1400px) {
+            .game-layout {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+                max-width: 800px;
+            }
+            
+            .controls-panel {
+                margin: 0 auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+                margin-bottom: 2rem;
+            }
+            
+            #drawCanvas {
+                width: 100%;
+                max-width: 350px;
+                height: auto;
+            }
+            
+            .color-btn {
+                width: 3rem;
+                height: 3rem;
+                font-size: 1rem;
+            }
+            
+            .design-section {
+                padding: 1rem;
+            }
+            
+            .section-title {
+                font-size: 1rem;
+            }
+            
+            .canvas-controls {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .battle-separator {
+                font-size: 1.5rem;
+                order: 1;
+            }
+            
+            .player1-stats {
+                order: 0;
+            }
+            
+            .player2-stats {
+                order: 2;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 0.75rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .color-btn {
+                width: 2.75rem;
+                height: 2.75rem;
+                font-size: 0.875rem;
+            }
+            
+            .design-section {
+                padding: 0.75rem;
+        }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>BladeBox</h1>
+        <p class="subtitle">Forge Your Weapon. Battle for Victory.</p>
+        <div class="text-center mb-4 flex justify-center gap-4">
+            <a href="lobby.html" class="inline-flex items-center px-4 py-2 bg-persian_green/20 hover:bg-persian_green/30 border border-persian_green/40 rounded-lg text-saffron hover:text-saffron-300 transition-colors text-sm font-medium">
+                🏛️ Back to Lobby
+            </a>
+            <a href="craft-weapon.html" class="inline-flex items-center px-4 py-2 bg-saffron/20 hover:bg-saffron/30 border border-saffron/40 rounded-lg text-saffron hover:text-saffron-300 transition-colors text-sm font-medium">
+                🔨 Craft Weapons
+            </a>
+        </div>
+        
+        <div class="game-layout">
+            <div class="arena-section">
+
+                <div id="world" class="glow"></div>
+                
+                <!-- Battle Stats Panel -->
+                <div id="battleStats" class="battle-stats" style="display: none;">
+                    <div class="stats-grid">
+                        <div class="player-stats player1-stats">
+                            <div class="player-header">
+                                <span class="player-icon">🛡️</span>
+                                <span class="player-name">Player 1</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">HP:</span>
+                                <span id="player1HP" class="stat-value hp-value">100</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">Spin:</span>
+                                <div class="spin-display">
+                                    <span id="player1Spin" class="stat-value spin-value">0.0</span>
+                                    <span id="player1Boost" class="boost-value">(+0%)</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="battle-separator">⚔️</div>
+                        
+                        <div class="player-stats player2-stats">
+                            <div class="player-header">
+                                <span class="player-icon">⚔️</span>
+                                <span class="player-name">Player 2</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">HP:</span>
+                                <span id="player2HP" class="stat-value hp-value">100</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">Spin:</span>
+                                <div class="spin-display">
+                                    <span id="player2Spin" class="stat-value spin-value">0.0</span>
+                                    <span id="player2Boost" class="boost-value">(+0%)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="controls-panel">
+                <!-- Battle Button -->
+                <button id="startBtn" class="start-btn">Begin Battle</button>
+                
+                <!-- Player Weapons Display -->
+                <div class="design-section">
+                    <div class="section-title">Battle Weapons</div>
+                    
+                    <div class="player-weapons-grid">
+                        <div class="player-weapon-card">
+                            <div class="player-weapon-header">
+                                <span class="player-icon">🛡️</span>
+                                <span class="player-name">Player 1</span>
+                            </div>
+                            <div id="player1WeaponDisplay" class="weapon-display">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <div class="vs-separator">
+                            <div class="vs-text">VS</div>
+                        </div>
+                        
+                        <div class="player-weapon-card">
+                            <div class="player-weapon-header">
+                                <span class="player-icon">⚔️</span>
+                                <span class="player-name">Player 2</span>
+                            </div>
+                            <div id="player2WeaponDisplay" class="weapon-display">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="weapon-actions">
+                        <button onclick="location.href='craft-weapon.html'" class="btn-craft">
+                            🔨 Craft New Weapons
+                        </button>
+                        <div style="display: flex; gap: 1rem; justify-content: center; align-items: center; margin-top: 1rem;">
+                            <select id="weaponSelector" style="
+                                padding: 0.75rem 1rem;
+                                border-radius: 0.5rem;
+                                background: linear-gradient(135deg, #2a9d8f 0%, #217e73 100%);
+                                color: white;
+                                border: none;
+                                font-weight: 600;
+                                font-size: 0.875rem;
+                                cursor: pointer;
+                                box-shadow: 0 4px 12px rgba(42, 157, 143, 0.3);
+                                outline: none;
+                            ">
+                                <option value="">Choose Default Weapon</option>
+                                <option value="basicSword">⚔️ Basic Sword</option>
+                                <option value="warHammer">🔨 War Hammer</option>
+                                <option value="spear">🗡️ Iron Spear</option>
+                                <option value="battleAxe">🪓 Battle Axe</option>
+                                <option value="dagger">🗡️ Swift Dagger</option>
+                                <option value="mace">⚒️ Iron Mace</option>
+                                <option value="katana">🗾 Steel Katana</option>
+                                <option value="halberd">⚔️ Royal Halberd</option>
+                                <option value="magicBlade">✨ Enchanted Blade</option>
+                            </select>
+                            <button id="randomWeaponBtn" class="btn-defaults" style="white-space: nowrap;">
+                                🎲 Random Weapons
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Audio Controls -->
+                <div class="design-section">
+                    <div class="section-title">Audio</div>
+                    <div class="sound-buttons">
+                        <button id="muteBtn" class="sound-btn">Sound On</button>
+                        <div class="volume-container">
+                            <span class="volume-label">Vol:</span>
+                            <input type="range" id="volumeSlider" min="0" max="100" value="70" class="volume-slider">
+                            <span id="volumeValue" class="volume-value">70%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.io client -->
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+        // Battle synchronization
+        let socket = null;
+        let battleRoomId = null;
+        let playerNumber = null;
+        let isMultiplayer = false;
+        
+        // Check if we're coming from a multiplayer battle
+        const urlParams = new URLSearchParams(window.location.search);
+        const battleRoomParam = urlParams.get('battleRoom');
+        if (battleRoomParam) {
+            isMultiplayer = true;
+            battleRoomId = battleRoomParam;
+            initializeMultiplayer();
+        }
+        
+        function initializeMultiplayer() {
+            console.log('Initializing multiplayer battle:', battleRoomId);
+            socket = io('http://localhost:3000');
+            
+            socket.on('connect', () => {
+                console.log('Connected to battle server:', socket.id);
+                socket.emit('join-battle', { battleRoomId });
+            });
+            
+            socket.on('battle-joined', (data) => {
+                console.log('Joined battle:', data);
+                playerNumber = data.playerNumber;
+                console.log(`You are Player ${playerNumber}`);
+                
+                // Show player number in UI
+                document.title = `BladeBox - Player ${playerNumber}`;
+            });
+            
+            socket.on('battle-ready', (data) => {
+                console.log('Battle ready:', data);
+                // Both players connected, battle can begin
+            });
+            
+            socket.on('battle-state-update', (data) => {
+                // Update other player's state
+                if (data.playerNumber !== playerNumber) {
+                    updateRemotePlayer(data);
+                }
+            });
+            
+            socket.on('battle-action-broadcast', (data) => {
+                console.log('Battle action:', data);
+                const { action, damage, targetPlayer, gameState } = data;
+                
+                if (action === 'hit' && damage && targetPlayer) {
+                    // Apply damage to the target player
+                    if (targetPlayer === 1 && player1) {
+                        player1.custom.hp = Math.max(0, player1.custom.hp - damage);
+                        console.log(`Received hit: Player 1 took ${damage} damage, HP: ${player1.custom.hp}`);
+                    } else if (targetPlayer === 2 && player2) {
+                        player2.custom.hp = Math.max(0, player2.custom.hp - damage);
+                        console.log(`Received hit: Player 2 took ${damage} damage, HP: ${player2.custom.hp}`);
+                    }
+                    
+                    // Update battle stats display
+                    updateBattleStats();
+                } else if (action === 'victory') {
+                    // Handle battle end
+                    const winner = targetPlayer === 1 ? 2 : 1;
+                    console.log(`Battle ended! Player ${winner} wins!`);
+                    
+                    // Stop battle stats updates
+                    clearInterval(battleStatsInterval);
+                    updateBattleStats();
+                    
+                    // Stop physics simulation
+                    Matter.Runner.stop(runner);
+                }
+            });
+            
+            socket.on('battle-ended', (data) => {
+                console.log('Battle ended:', data);
+                alert(`Battle Over! ${data.message}`);
+            });
+        }
+        
+        function updateRemotePlayer(data) {
+            // Update the remote player's position and rotation
+            const { playerNumber, position, rotation, hp } = data;
+            
+            if (playerNumber === 1 && player1) {
+                // Update player 1's position (if we're player 2)
+                if (position) {
+                    Matter.Body.setPosition(player1, { x: position.x, y: position.y });
+                }
+                if (rotation !== undefined) {
+                    Matter.Body.setAngle(player1, rotation);
+                }
+                if (hp !== undefined) {
+                    player1.custom.hp = hp;
+                }
+            } else if (playerNumber === 2 && player2) {
+                // Update player 2's position (if we're player 1)
+                if (position) {
+                    Matter.Body.setPosition(player2, { x: position.x, y: position.y });
+                }
+                if (rotation !== undefined) {
+                    Matter.Body.setAngle(player2, rotation);
+                }
+                if (hp !== undefined) {
+                    player2.custom.hp = hp;
+                }
+            }
+        }
+        
+        // Throttle position updates to prevent network spam
+        let lastUpdateTime = 0;
+        const UPDATE_THROTTLE = 50; // Send updates every 50ms (20fps)
+        
+        function sendBattleUpdate(position, rotation, hp) {
+            if (socket && isMultiplayer) {
+                const now = Date.now();
+                if (now - lastUpdateTime >= UPDATE_THROTTLE) {
+                    socket.emit('battle-update', {
+                        battleRoomId,
+                        playerNumber,
+                        position,
+                        rotation,
+                        hp
+                    });
+                    lastUpdateTime = now;
+                }
+            }
+        }
+        
+        function sendBattleAction(action, damage, targetPlayer) {
+            if (socket && isMultiplayer) {
+                socket.emit('battle-action', {
+                    battleRoomId,
+                    action,
+                    damage,
+                    targetPlayer
+                });
+            }
+        }
+
+        // Sound Manager System
+        class SoundManager {
+            constructor() {
+                this.sounds = {};
+                this.volume = 0.7;
+                this.muted = false;
+                this.init();
+            }
+
+            init() {
+                // Define all game sounds
+                const soundFiles = {
+                    weaponHitBody: './sounds/weapon_impact_body.wav',
+                    deathSound: './sounds/HP_at_0.wav',  // Death/defeat sound only
+                    weaponClash: './sounds/weapon_impact_weapon.wav'
+                };
+
+                // Preload all sounds
+                for (const [key, path] of Object.entries(soundFiles)) {
+                    const audio = new Audio(path);
+                    audio.volume = this.volume;
+                    audio.preload = 'auto';
+                    
+                    // Add error handling
+                    audio.addEventListener('error', () => {
+                        console.warn(`Failed to load sound: ${path}`);
+                    });
+                    
+                    this.sounds[key] = audio;
+                }
+            }
+
+            play(soundKey, volumeOverride = null) {
+                if (this.muted || !this.sounds[soundKey]) return;
+                
+                try {
+                    const sound = this.sounds[soundKey].cloneNode();
+                    sound.volume = volumeOverride || this.volume;
+                    
+                    // Files are now trimmed, no need to skip beginning
+                    sound.currentTime = 0;
+                    
+                    sound.play().catch(e => {
+                        console.warn('Sound play failed:', e);
+                    });
+                } catch (error) {
+                    console.warn('Sound error:', error);
+                }
+            }
+
+            setVolume(volume) {
+                this.volume = Math.max(0, Math.min(1, volume));
+                Object.values(this.sounds).forEach(sound => {
+                    sound.volume = this.volume;
+                });
+            }
+
+            toggleMute() {
+                this.muted = !this.muted;
+                return this.muted;
+            }
+        }
+
+        // Initialize sound manager
+        const soundManager = new SoundManager();
+
+        // Weapon loading system
+        const playerWeapons = {
+            1: null,
+            2: null
+        };
+
+        // Weapon storage interface
+        function getEquippedWeapon() {
+            try {
+                const equippedId = localStorage.getItem('bladebox_equipped_weapon');
+                if (!equippedId) return null;
+                
+                const weapons = JSON.parse(localStorage.getItem('bladebox_weapons')) || {};
+                return weapons[equippedId] || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Collection of default weapons
+        const defaultWeapons = {
+            basicSword: {
+                id: 'default_basic_sword',
+                name: 'Basic Sword',
+                pixelData: {
+                    '2,55': 'wood',   // Handle close to body
+                    '2,54': 'wood',
+                    '1,53': 'steel',  // Crossguard
+                    '2,53': 'steel',
+                    '3,53': 'steel',
+                    '2,52': 'steel',
+                    '2,51': 'iron',   // Blade extending away from body
+                    '2,50': 'iron',
+                    '2,49': 'iron',
+                    '2,48': 'iron',
+                    '2,47': 'iron'
+                },
+                manaUsed: 10
+            },
+            warHammer: {
+                id: 'default_war_hammer',
+                name: 'War Hammer',
+                pixelData: {
+                    // Handle close to body
+                    '2,55': 'wood',
+                    '2,54': 'wood',
+                    '2,53': 'wood',
+                    '2,52': 'wood',
+                    '2,51': 'wood',
+                    '2,50': 'wood',
+                    '2,49': 'wood',
+                    '2,48': 'wood',
+                    // Hammer head - horizontal steel bar
+                    '0,47': 'steel',
+                    '1,47': 'steel',
+                    '2,47': 'steel',
+                    '3,47': 'steel',
+                    '4,47': 'steel',
+                    '5,47': 'steel',
+                    '6,47': 'steel',
+                    // Iron reinforcement
+                    '1,46': 'iron',
+                    '2,46': 'iron',
+                    '3,46': 'iron',
+                    '4,46': 'iron',
+                    '5,46': 'iron'
+                },
+                manaUsed: 18
+            },
+            spear: {
+                id: 'default_spear',
+                name: 'Iron Spear',
+                pixelData: {
+                    // Long wooden shaft close to body
+                    '2,55': 'wood',
+                    '2,54': 'wood',
+                    '2,53': 'wood',
+                    '2,52': 'wood',
+                    '2,51': 'wood',
+                    '2,50': 'wood',
+                    '2,49': 'wood',
+                    '2,48': 'wood',
+                    '2,47': 'wood',
+                    '2,46': 'wood',
+                    '2,45': 'wood',
+                    // Spear point extending away
+                    '2,44': 'iron',
+                    '2,43': 'iron',
+                    '2,42': 'steel',
+                    '1,43': 'iron',
+                    '3,43': 'iron'
+                },
+                manaUsed: 16
+            },
+            battleAxe: {
+                id: 'default_battle_axe',
+                name: 'Battle Axe',
+                pixelData: {
+                    // Handle close to body
+                    '2,55': 'wood',
+                    '2,54': 'wood',
+                    '2,53': 'wood',
+                    '2,52': 'wood',
+                    '2,51': 'wood',
+                    '2,50': 'wood',
+                    '2,49': 'wood',
+                    // Axe head - curved design extending away
+                    '3,48': 'iron',
+                    '4,48': 'iron',
+                    '5,47': 'steel',
+                    '6,47': 'steel',
+                    '7,46': 'steel',
+                    '5,46': 'iron',
+                    '4,47': 'iron',
+                    '3,47': 'iron',
+                    '2,48': 'iron',
+                    // Decorative ruby
+                    '1,47': 'ruby'
+                },
+                manaUsed: 14
+            },
+            dagger: {
+                id: 'default_dagger',
+                name: 'Swift Dagger',
+                pixelData: {
+                    // Pommel close to body
+                    '2,54': 'gold',
+                    // Handle
+                    '2,53': 'wood',
+                    '2,52': 'wood',
+                    // Crossguard
+                    '1,51': 'iron',
+                    '2,51': 'iron',
+                    '3,51': 'iron',
+                    // Short blade extending away
+                    '2,50': 'iron',
+                    '2,49': 'iron',
+                    '2,48': 'steel',
+                    '2,47': 'steel'
+                },
+                manaUsed: 8
+            },
+            mace: {
+                id: 'default_mace',
+                name: 'Iron Mace',
+                pixelData: {
+                    // Handle close to body
+                    '2,55': 'wood',
+                    '2,54': 'wood',
+                    '2,53': 'wood',
+                    '2,52': 'wood',
+                    '2,51': 'wood',
+                    '2,50': 'wood',
+                    // Mace head - studded design extending away
+                    '1,49': 'iron',
+                    '2,49': 'steel',
+                    '3,49': 'iron',
+                    '1,48': 'steel',
+                    '2,48': 'iron',
+                    '3,48': 'steel',
+                    '2,47': 'steel',
+                    // Spikes
+                    '0,49': 'iron',
+                    '4,49': 'iron',
+                    '2,46': 'iron'
+                },
+                manaUsed: 14
+            },
+            katana: {
+                id: 'default_katana',
+                name: 'Steel Katana',
+                pixelData: {
+                    // Pommel and handle close to body
+                    '2,56': 'gold',
+                    '2,55': 'wood',
+                    '3,54': 'ruby',
+                    '2,54': 'wood',
+                    '1,53': 'ruby',
+                    '2,53': 'wood',
+                    // Guard
+                    '1,52': 'iron',
+                    '2,52': 'iron',
+                    '3,52': 'iron',
+                    // Curved blade extending away from body
+                    '5,51': 'iron',
+                    '4,50': 'iron',
+                    '4,49': 'steel',
+                    '3,48': 'steel',
+                    '3,47': 'steel',
+                    '2,46': 'steel',
+                    '2,45': 'steel'
+                },
+                manaUsed: 16
+            },
+            halberd: {
+                id: 'default_halberd',
+                name: 'Royal Halberd',
+                pixelData: {
+                    // Long pole close to body
+                    '2,55': 'wood',
+                    '2,54': 'wood',
+                    '2,53': 'wood',
+                    '2,52': 'wood',
+                    '2,51': 'wood',
+                    '2,50': 'wood',
+                    '2,49': 'wood',
+                    '2,48': 'wood',
+                    '2,47': 'wood',
+                    '2,46': 'wood',
+                    // Decorative elements
+                    '1,45': 'emerald',
+                    '3,45': 'sapphire',
+                    // Spear point extending away
+                    '2,44': 'steel',
+                    '2,43': 'steel',
+                    '2,42': 'steel',
+                    // Axe blade
+                    '3,44': 'iron',
+                    '4,44': 'steel',
+                    '5,43': 'steel',
+                    '6,43': 'steel',
+                    // Hook on other side
+                    '1,44': 'iron',
+                    '0,43': 'iron'
+                },
+                manaUsed: 20
+            },
+            magicBlade: {
+                id: 'default_magic_blade',
+                name: 'Enchanted Blade',
+                pixelData: {
+                    // Jeweled handle close to body
+                    '2,56': 'sapphire',
+                    '2,55': 'gold',
+                    '3,54': 'emerald',
+                    '2,54': 'gold',
+                    '1,53': 'ruby',
+                    '2,53': 'gold',
+                    // Ornate crossguard
+                    '0,52': 'gold',
+                    '1,52': 'gold',
+                    '2,52': 'steel',
+                    '3,52': 'gold',
+                    '4,52': 'gold',
+                    // Mystical blade with gems extending away
+                    '2,51': 'steel',
+                    '3,50': 'sapphire',
+                    '2,50': 'steel',
+                    '1,49': 'ruby',
+                    '2,49': 'steel',
+                    '3,48': 'emerald',
+                    '2,48': 'steel',
+                    '1,47': 'sapphire',
+                    '2,47': 'steel'
+                },
+                manaUsed: 18
+            }
+        };
+
+        function getDefaultWeapon() {
+            const weapon = {...defaultWeapons.basicSword};
+            weapon.dateCreated = new Date().toISOString();
+            return weapon;
+        }
+
+        function getRandomDefaultWeapon() {
+            const weaponKeys = Object.keys(defaultWeapons);
+            const randomKey = weaponKeys[Math.floor(Math.random() * weaponKeys.length)];
+            const weapon = {...defaultWeapons[randomKey]};
+            weapon.dateCreated = new Date().toISOString();
+            return weapon;
+        }
+
+        function getSpecificDefaultWeapon(weaponKey) {
+            if (defaultWeapons[weaponKey]) {
+                const weapon = {...defaultWeapons[weaponKey]};
+                weapon.dateCreated = new Date().toISOString();
+                return weapon;
+            }
+            return getDefaultWeapon();
+        }
+
+        // Material system
+        const materials = {
+            wood: { color: '#8B4513', damage: 0, cost: 0, collision: false, name: 'Wood' },
+            ruby: { color: '#DC143C', damage: 0, cost: 0, collision: false, name: 'Ruby' },
+            emerald: { color: '#228B22', damage: 0, cost: 0, collision: false, name: 'Emerald' },
+            sapphire: { color: '#4169E1', damage: 0, cost: 0, collision: false, name: 'Sapphire' },
+            gold: { color: '#FFD700', damage: 0, cost: 0, collision: false, name: 'Gold' },
+            iron: { color: '#C0C0C0', damage: 1, cost: 1, collision: true, name: 'Iron' },
+            steel: { color: '#708090', damage: 2, cost: 2, collision: true, name: 'Steel' }
+        };
+
+        // Weapon preview system
+        const GRID_WIDTH = 60;
+        const GRID_HEIGHT = 60;
+        const BODY_PREVIEW = {
+            x: 2,        // Moved closer to left edge
+            y: 57,       // Moved closer to bottom edge  
+            radius: 4    // Part of the body will extend outside the drawing area
+        };
+
+        function createWeaponPreview(pixelData, size = 100) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            canvas.className = 'weapon-preview';
+            const ctx = canvas.getContext('2d');
+            
+            const cellSize = size / GRID_WIDTH;
+            
+            // Draw background
+            ctx.fillStyle = 'rgba(202, 222, 231, 0.05)';
+            ctx.fillRect(0, 0, size, size);
+            
+            // Draw body preview
+            const centerX = (BODY_PREVIEW.x + 0.5) * cellSize;
+            const centerY = (BODY_PREVIEW.y + 0.5) * cellSize;
+            const radius = BODY_PREVIEW.radius * cellSize;
+            
+            ctx.fillStyle = 'rgba(42, 157, 143, 0.2)';
+            ctx.strokeStyle = '#2a9d8f';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Draw pixels
+            Object.entries(pixelData).forEach(([key, materialType]) => {
+                const [x, y] = key.split(',').map(Number);
+                const material = materials[materialType];
+                
+                if (material) {
+                    ctx.fillStyle = material.color;
+                    ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                    
+                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+                    ctx.lineWidth = 0.5;
+                    ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                }
+            });
+            
+            return canvas;
+        }
+
+        function updatePlayerWeaponDisplay(playerId) {
+            const weapon = playerWeapons[playerId];
+            const container = document.getElementById(`player${playerId}WeaponDisplay`);
+            
+            if (!weapon) {
+                container.innerHTML = `
+                    <div class="no-weapon">
+                        <div class="no-weapon-icon">⚔️</div>
+                        <div>No weapon equipped</div>
+                        <div style="font-size: 0.75rem; color: #95bece; margin-top: 0.5rem;">
+                            Will use default weapon in battle
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const preview = createWeaponPreview(weapon.pixelData, 100);
+            
+            container.innerHTML = `
+                <div class="weapon-display">
+                    ${preview.outerHTML}
+                    <div class="weapon-info">
+                        <div class="weapon-name">${weapon.name}</div>
+                        <div class="weapon-stats">Mana: ${weapon.manaUsed || 0}/100</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function loadPlayerWeapons() {
+            // For now, both players use the same equipped weapon
+            const equippedWeapon = getEquippedWeapon();
+            
+            if (equippedWeapon) {
+                playerWeapons[1] = equippedWeapon;
+                playerWeapons[2] = equippedWeapon;
+            } else {
+                // No equipped weapon, will use defaults in battle
+                playerWeapons[1] = null;
+                playerWeapons[2] = null;
+            }
+            
+            updatePlayerWeaponDisplay(1);
+            updatePlayerWeaponDisplay(2);
+        }
+
+        function loadDefaultWeapons() {
+            const defaultWeapon = getDefaultWeapon();
+            playerWeapons[1] = defaultWeapon;
+            playerWeapons[2] = defaultWeapon;
+            
+            updatePlayerWeaponDisplay(1);
+            updatePlayerWeaponDisplay(2);
+        }
+
+        function loadRandomWeapons() {
+            playerWeapons[1] = getRandomDefaultWeapon();
+            playerWeapons[2] = getRandomDefaultWeapon();
+            
+            updatePlayerWeaponDisplay(1);
+            updatePlayerWeaponDisplay(2);
+        }
+
+        function loadSpecificWeapon(weaponKey) {
+            const weapon = getSpecificDefaultWeapon(weaponKey);
+            playerWeapons[1] = weapon;
+            playerWeapons[2] = weapon;
+            
+            updatePlayerWeaponDisplay(1);
+            updatePlayerWeaponDisplay(2);
+            
+            // Show which weapon was loaded
+            console.log(`Loaded: ${weapon.name}`);
+        }
+
+        // Removed old drawing system - now using weapon loading
+
+        // Sound control setup
+        function initSoundControls() {
+            // Mute button
+            document.getElementById('muteBtn').addEventListener('click', () => {
+                const isMuted = soundManager.toggleMute();
+                const btn = document.getElementById('muteBtn');
+                btn.textContent = isMuted ? 'Sound Off' : 'Sound On';
+                btn.style.color = isMuted ? '#e76f51' : '#264653';
+            });
+
+            // Volume slider
+            const volumeSlider = document.getElementById('volumeSlider');
+            const volumeValue = document.getElementById('volumeValue');
+            
+            volumeSlider.addEventListener('input', () => {
+                const volume = volumeSlider.value / 100;
+                soundManager.setVolume(volume);
+                volumeValue.textContent = `${volumeSlider.value}%`;
+            });
+        }
+
+        // Removed old drawing/crafting functions - now using weapon loading system
+
+        // Add hover sounds to buttons
+        function addButtonSounds() {
+            const buttons = document.querySelectorAll('.start-btn, .clear-btn, .sound-btn');
+            buttons.forEach(button => {
+                button.addEventListener('mouseenter', () => {
+                    soundManager.play('weaponHitBody', 0.06);
+                });
+            });
+        }
+
+        // Physics setup
+        const engine = Matter.Engine.create();
+        
+        // Reduce gravity for more floaty combat
+        engine.world.gravity.y = 0.6; // Default is 1
+
+        // Increase iterations for better stability to prevent clipping
+        engine.positionIterations = 10;
+        engine.velocityIterations = 10;
+        engine.constraintIterations = 10;
+
+        // Slow down simulation
+        engine.timing.timeScale = 0.5;  // Run at half speed
+
+        const render = Matter.Render.create({
+            element: document.getElementById('world'),
+            engine: engine,
+            options: {
+                width: 900,
+                height: 500,
+                wireframes: false,
+                background: 'linear-gradient(135deg, #0a101c 0%, #1a2332 50%, #0f161f 100%)',
+                showAngleIndicator: false,
+                showVelocity: false
+            }
+        });
+
+        const runner = Matter.Runner.create();
+
+        // Common physics options for elastic, no friction collisions
+        const physicsOptions = {
+            restitution: 1,
+            friction: 0,
+            frictionAir: 0,
+            frictionStatic: 0
+        };
+
+        let player1, player2;  // To access for rendering HP
+        let battleStatsInterval;  // For updating battle stats
+        let impactFrameActive = false;  // For impact frame effects
+        let impactFrameTimer = 0;  // Timer for impact frame duration
+
+        // Convert pixel data from stored weapons to physics bodies
+        function createWeaponFromPixels(pixelData, centerX, centerY, side, bodyRadius) {
+            const weaponParts = [];
+            const pixelScale = bodyRadius / BODY_PREVIEW.radius; // Match scale to body radius
+            const processedPixels = new Set();
+            const bodyGridCenterX = BODY_PREVIEW.x + 0.5;
+            const bodyGridCenterY = BODY_PREVIEW.y + 0.5;
+            
+            Object.keys(pixelData).forEach(key => {
+                if (processedPixels.has(key)) return;
+                
+                const [px, py] = key.split(',').map(Number);
+                const materialType = pixelData[key];
+                const material = materials[materialType];
+                
+                if (!material) return;
+                
+                let width = 1;
+                let currentKey = `${px + width},${py}`;
+                while (pixelData[currentKey] === materialType && !processedPixels.has(currentKey)) {
+                    processedPixels.add(currentKey);
+                    width++;
+                    currentKey = `${px + width},${py}`;
+                }
+                
+                processedPixels.add(key);
+                
+                // Calculate center of the group
+                const centerGridX = px + (width / 2);
+                const centerGridY = py + 0.5;
+                const gridOffsetX = centerGridX - bodyGridCenterX;
+                const gridOffsetY = centerGridY - bodyGridCenterY;
+                
+                const worldX = centerX + (gridOffsetX * pixelScale);
+                const worldY = centerY + (gridOffsetY * pixelScale);
+                
+                const pixelBody = Matter.Bodies.rectangle(
+                    worldX,
+                    worldY,
+                    width * pixelScale,
+                    pixelScale,
+                    {
+                        label: material.collision ? side + 'weapon' : side + 'aesthetic',
+                        render: { 
+                            fillStyle: material.color,
+                            strokeStyle: 'rgba(0,0,0,0.3)',
+                            lineWidth: 1
+                        },
+                        isSensor: !material.collision,
+                        damage: material.damage,
+                        // Store the relative position for constraints
+                        weaponOffset: { x: gridOffsetX * pixelScale, y: gridOffsetY * pixelScale },
+                        ...physicsOptions
+                    }
+                );
+                
+                weaponParts.push(pixelBody);
+            });
+            
+            return weaponParts;
+        }
+
+        // Apply HP-based rotational velocity boost
+        function applyHpBoost(player) {
+            const hpLost = player.custom.maxHp - player.custom.hp;
+            const rotationalBoost = 1 + (hpLost * 0.02); // 2% per HP lost
+            const newRotVel = player.custom.baseRotVel * rotationalBoost;
+            
+            // Apply the boosted rotational velocity (maintain direction)
+            const currentDirection = Math.sign(player.angularVelocity) || (player.label.includes('left') ? 1 : -1);
+            Matter.Body.setAngularVelocity(player, newRotVel * currentDirection);
+        }
+
+        // Velocity capping and speed gain system
+        const MAX_VELOCITY = 25; // Maximum linear velocity
+        const MAX_ANGULAR_VELOCITY = 0.5; // Maximum angular velocity
+        const SPEED_GAIN_COOLDOWN = 200; // Milliseconds between speed gains
+        
+        function capVelocity(body) {
+            // Cap linear velocity
+            const currentSpeed = Math.sqrt(body.velocity.x ** 2 + body.velocity.y ** 2);
+            if (currentSpeed > MAX_VELOCITY) {
+                const scale = MAX_VELOCITY / currentSpeed;
+                Matter.Body.setVelocity(body, {
+                    x: body.velocity.x * scale,
+                    y: body.velocity.y * scale
+                });
+            }
+            
+            // Cap angular velocity
+            if (Math.abs(body.angularVelocity) > MAX_ANGULAR_VELOCITY) {
+                const direction = Math.sign(body.angularVelocity);
+                Matter.Body.setAngularVelocity(body, MAX_ANGULAR_VELOCITY * direction);
+            }
+        }
+        
+        function applySpeedGain(player, damage = 1) {
+            const now = Date.now();
+            
+            // Check cooldown
+            if (player.custom.lastSpeedGain && (now - player.custom.lastSpeedGain) < SPEED_GAIN_COOLDOWN) {
+                return; // Skip speed gain if in cooldown
+            }
+            
+            player.custom.lastSpeedGain = now;
+            
+            // Use impulse-based system instead of multiplication for more predictable results
+            const speedBonus = Math.min(damage * 3, 8); // Cap the speed bonus
+            const currentVel = player.velocity;
+            const currentSpeed = Math.sqrt(currentVel.x ** 2 + currentVel.y ** 2);
+            
+            // Only apply speed gain if current speed is reasonable
+            if (currentSpeed < MAX_VELOCITY * 0.8) {
+                // Add impulse in current direction
+                if (currentSpeed > 0.1) {
+                    const direction = {
+                        x: currentVel.x / currentSpeed,
+                        y: currentVel.y / currentSpeed
+                    };
+                    
+                    Matter.Body.setVelocity(player, {
+                        x: currentVel.x + direction.x * speedBonus,
+                        y: currentVel.y + direction.y * speedBonus
+                    });
+                }
+                
+                // Angular velocity boost with diminishing returns
+                const currentAngularSpeed = Math.abs(player.angularVelocity);
+                if (currentAngularSpeed < MAX_ANGULAR_VELOCITY * 0.8) {
+                    const angularBonus = (damage * 0.05) * (1 - currentAngularSpeed / MAX_ANGULAR_VELOCITY);
+                    const direction = Math.sign(player.angularVelocity) || (player.label.includes('left') ? 1 : -1);
+                    Matter.Body.setAngularVelocity(player, player.angularVelocity + angularBonus * direction);
+                }
+            }
+            
+            // Apply velocity cap after speed gain
+            capVelocity(player);
+        }
+
+        // Impact frame system for dramatic effect
+        function triggerImpactFrame(intensity = 'medium') {
+            if (impactFrameActive) return; // Don't stack impact frames
+            
+            impactFrameActive = true;
+            const originalTimeScale = engine.timing.timeScale;
+            
+            // Different intensities for different types of hits
+            let pauseDuration, slowdownFactor;
+            switch(intensity) {
+                case 'light':
+                    pauseDuration = 80; // milliseconds
+                    slowdownFactor = 0.1;
+                    break;
+                case 'medium':
+                    pauseDuration = 120; // milliseconds
+                    slowdownFactor = 0.05;
+                    break;
+                case 'heavy':
+                    pauseDuration = 180; // milliseconds
+                    slowdownFactor = 0.02;
+                    break;
+            }
+            
+            // Dramatic slowdown
+            engine.timing.timeScale = originalTimeScale * slowdownFactor;
+            
+            // Add subtle screen flash effect
+            const arena = document.getElementById('world');
+            arena.style.filter = 'brightness(1.3) contrast(1.2)';
+            
+            // Reset after pause duration
+            impactFrameTimer = setTimeout(() => {
+                engine.timing.timeScale = originalTimeScale;
+                arena.style.filter = 'brightness(1) contrast(1)';
+                impactFrameActive = false;
+            }, pauseDuration);
+        }
+
+        // Update battle stats display
+        function updateBattleStats() {
+            if (!player1 || !player2) return;
+
+            // Update HP values
+            document.getElementById('player1HP').textContent = Math.max(0, player1.custom.hp);
+            document.getElementById('player2HP').textContent = Math.max(0, player2.custom.hp);
+
+            // Update spin velocity values (convert radians to a readable format)
+            const player1Spin = Math.abs(player1.angularVelocity).toFixed(2);
+            const player2Spin = Math.abs(player2.angularVelocity).toFixed(2);
+            
+            document.getElementById('player1Spin').textContent = player1Spin;
+            document.getElementById('player2Spin').textContent = player2Spin;
+
+            // Calculate and display boost percentages
+            const p1HpLost = player1.custom.maxHp - player1.custom.hp;
+            const p2HpLost = player2.custom.maxHp - player2.custom.hp;
+            
+            const p1BoostPercent = Math.max(0, p1HpLost * 2); // 2% per HP lost
+            const p2BoostPercent = Math.max(0, p2HpLost * 2); // 2% per HP lost
+            
+            document.getElementById('player1Boost').textContent = `(+${p1BoostPercent}%)`;
+            document.getElementById('player2Boost').textContent = `(+${p2BoostPercent}%)`;
+
+            // Keep HP and spin values green (no color changes)
+        }
+
+        // Function to create player with custom weapon
+        function createPlayer(x, y, side, params, playerId) {
+            const radius = params.radius;
+            const hp = params.hp;
+            const initVel = params.vel;
+            const initRotVel = params.rotVel;
+            const speedGain = params.speedGain;
+
+            const mainBody = Matter.Bodies.circle(x, y, radius, { 
+                label: side + 'main',
+                render: { 
+                    fillStyle: side === 'left' ? 'rgba(42, 157, 143, 0.8)' : 'rgba(231, 111, 81, 0.8)',
+                    strokeStyle: side === 'left' ? '#2a9d8f' : '#e76f51',
+                    lineWidth: 3
+                },
+                ...physicsOptions
+            });
+
+            // Create weapon from loaded weapon data
+            const weapon = playerWeapons[playerId] || getDefaultWeapon();
+            const pixelData = weapon.pixelData;
+            let weaponParts = [];
+            let constraints = [];
+            
+            if (Object.keys(pixelData).length > 0) {
+                weaponParts = createWeaponFromPixels(pixelData, x, y, side, radius);
+                
+                // Create rigid constraints to attach weapon parts to main body
+                weaponParts.forEach(weaponPart => {
+                    if (weaponPart.weaponOffset) {
+                        const constraint = Matter.Constraint.create({
+                            bodyA: mainBody,
+                            bodyB: weaponPart,
+                            pointA: weaponPart.weaponOffset, // Offset from main body center
+                            pointB: { x: 0, y: 0 }, // Center of weapon part
+                            length: 0, // Rigid connection
+                            stiffness: 1, // Completely rigid
+                            damping: 0, // No damping for rigid connection
+                            render: { visible: false } // Hide constraint lines
+                        });
+                        constraints.push(constraint);
+                    }
+                });
+            } else {
+                // Fallback weapon if no pixels
+                const bladeOffsetX = side === 'left' ? radius + 50 : -(radius + 50);
+                const blade = Matter.Bodies.rectangle(
+                    x + bladeOffsetX,
+                    y,
+                    100,
+                    10,
+                    { 
+                        label: side + 'weapon',
+                        render: { 
+                            fillStyle: side === 'left' ? '#2a9d8f' : '#e76f51',
+                            strokeStyle: side === 'left' ? '#264653' : '#264653',
+                            lineWidth: 2
+                        },
+                        damage: 1,
+                        ...physicsOptions
+                    }
+                );
+                weaponParts.push(blade);
+                
+                // Add constraint for fallback weapon
+                const constraint = Matter.Constraint.create({
+                    bodyA: mainBody,
+                    bodyB: blade,
+                    pointA: { x: bladeOffsetX, y: 0 },
+                    pointB: { x: 0, y: 0 },
+                    length: 0,
+                    stiffness: 1,
+                    damping: 0,
+                    render: { visible: false }
+                });
+                constraints.push(constraint);
+            }
+
+            const playerBody = Matter.Body.create({
+                parts: [mainBody, ...weaponParts],
+                label: side + 'player'
+            });
+
+            // Set physics options on composite
+            Matter.Body.set(playerBody, physicsOptions);
+
+            playerBody.custom = { 
+                hp, 
+                maxHp: hp, 
+                speedGain, 
+                baseRotVel: initRotVel, 
+                lastSpeedGain: 0,
+                constraints: constraints // Store constraints for cleanup if needed
+            };
+
+            Matter.Body.setVelocity(playerBody, { x: (side === 'left' ? initVel : -initVel), y: 0 });
+            Matter.Body.setAngularVelocity(playerBody, (side === 'left' ? initRotVel : -initRotVel));
+
+            return playerBody;
+        }
+
+        // Start button
+        document.getElementById('startBtn').addEventListener('click', () => {
+            // In multiplayer, only start if both players are ready
+            if (isMultiplayer && playerNumber) {
+                console.log(`Player ${playerNumber} starting battle`);
+            }
+            
+            // Ensure weapons are loaded (use defaults if none)
+            if (!playerWeapons[1]) playerWeapons[1] = getDefaultWeapon();
+            if (!playerWeapons[2]) playerWeapons[2] = getDefaultWeapon();
+
+            // Play epic start sound
+            soundManager.play('weaponClash', 0.9);
+
+            // Clear world if any
+            Matter.World.clear(engine.world, false);
+            
+            // Clear any existing battle stats interval
+            if (battleStatsInterval) {
+                clearInterval(battleStatsInterval);
+            }
+            
+            // Clear any active impact frames
+            if (impactFrameTimer) {
+                clearTimeout(impactFrameTimer);
+                impactFrameActive = false;
+                engine.timing.timeScale = 0.5; // Reset to normal game speed
+                document.getElementById('world').style.filter = 'brightness(1) contrast(1)';
+            }
+
+            // Add arena boundaries with improved styling
+            const wallThickness = 50;  
+            const wallLeft = Matter.Bodies.rectangle(0 - wallThickness/2, 250, wallThickness, 500, { 
+                isStatic: true,
+                render: { fillStyle: 'rgba(42, 157, 143, 0.3)' },
+                ...physicsOptions
+            });
+            const wallRight = Matter.Bodies.rectangle(900 + wallThickness/2, 250, wallThickness, 500, { 
+                isStatic: true,
+                render: { fillStyle: 'rgba(231, 111, 81, 0.3)' },
+                ...physicsOptions
+            });
+            const ground = Matter.Bodies.rectangle(450, 500 + wallThickness/2, 900, wallThickness, { 
+                isStatic: true,
+                render: { fillStyle: 'rgba(24, 35, 56, 0.4)' },
+                ...physicsOptions
+            });
+            const ceiling = Matter.Bodies.rectangle(450, 0 - wallThickness/2, 900, wallThickness, { 
+                isStatic: true,
+                render: { fillStyle: 'rgba(24, 35, 56, 0.4)' },
+                ...physicsOptions
+            });
+            Matter.World.add(engine.world, [wallLeft, wallRight, ground, ceiling]);
+
+            // Standardized parameters - no sliders needed
+            const params = {
+                radius: 30,
+                hp: 100,
+                vel: 12,
+                rotVel: 0.1,
+                speedGain: 1.6
+            };
+
+            player1 = createPlayer(150, 250, 'left', params, 1);
+            player2 = createPlayer(750, 250, 'right', params, 2);
+
+            // Add players to world
+            Matter.World.add(engine.world, [player1, player2]);
+            
+            // Add weapon constraints to keep weapons attached to bodies
+            if (player1.custom.constraints.length > 0) {
+                Matter.World.add(engine.world, player1.custom.constraints);
+            }
+            if (player2.custom.constraints.length > 0) {
+                Matter.World.add(engine.world, player2.custom.constraints);
+            }
+
+            // Show battle stats panel and start updating
+            document.getElementById('battleStats').style.display = 'block';
+            updateBattleStats();
+            
+            // Update battle stats every 100ms for smooth updates
+            battleStatsInterval = setInterval(updateBattleStats, 100);
+
+            Matter.Render.run(render);
+            Matter.Runner.run(runner, engine);
+
+            // Continuous velocity monitoring and multiplayer sync
+            Matter.Events.on(engine, 'beforeUpdate', () => {
+                if (player1) {
+                    capVelocity(player1);
+                    // Ensure player stays within bounds
+                    if (player1.position.x < 50) {
+                        Matter.Body.setPosition(player1, { x: 50, y: player1.position.y });
+                        Matter.Body.setVelocity(player1, { x: Math.abs(player1.velocity.x), y: player1.velocity.y });
+                    }
+                    if (player1.position.x > 850) {
+                        Matter.Body.setPosition(player1, { x: 850, y: player1.position.y });
+                        Matter.Body.setVelocity(player1, { x: -Math.abs(player1.velocity.x), y: player1.velocity.y });
+                    }
+                    if (player1.position.y < 50) {
+                        Matter.Body.setPosition(player1, { x: player1.position.x, y: 50 });
+                        Matter.Body.setVelocity(player1, { x: player1.velocity.x, y: Math.abs(player1.velocity.y) });
+                    }
+                    if (player1.position.y > 450) {
+                        Matter.Body.setPosition(player1, { x: player1.position.x, y: 450 });
+                        Matter.Body.setVelocity(player1, { x: player1.velocity.x, y: -Math.abs(player1.velocity.y) });
+                    }
+                    
+                    // Send multiplayer updates for controlled player
+                    if (isMultiplayer && playerNumber === 1) {
+                        sendBattleUpdate(
+                            { x: player1.position.x, y: player1.position.y },
+                            player1.angle,
+                            player1.custom.hp
+                        );
+                    }
+                }
+                if (player2) {
+                    capVelocity(player2);
+                    // Ensure player stays within bounds
+                    if (player2.position.x < 50) {
+                        Matter.Body.setPosition(player2, { x: 50, y: player2.position.y });
+                        Matter.Body.setVelocity(player2, { x: Math.abs(player2.velocity.x), y: player2.velocity.y });
+                    }
+                    if (player2.position.x > 850) {
+                        Matter.Body.setPosition(player2, { x: 850, y: player2.position.y });
+                        Matter.Body.setVelocity(player2, { x: -Math.abs(player2.velocity.x), y: player2.velocity.y });
+                    }
+                    if (player2.position.y < 50) {
+                        Matter.Body.setPosition(player2, { x: player2.position.x, y: 50 });
+                        Matter.Body.setVelocity(player2, { x: player2.velocity.x, y: Math.abs(player2.velocity.y) });
+                    }
+                    if (player2.position.y > 450) {
+                        Matter.Body.setPosition(player2, { x: player2.position.x, y: 450 });
+                        Matter.Body.setVelocity(player2, { x: player2.velocity.x, y: -Math.abs(player2.velocity.y) });
+                    }
+                    
+                    // Send multiplayer updates for controlled player
+                    if (isMultiplayer && playerNumber === 2) {
+                        sendBattleUpdate(
+                            { x: player2.position.x, y: player2.position.y },
+                            player2.angle,
+                            player2.custom.hp
+                        );
+                    }
+                }
+            });
+
+            // Collision tracking to prevent rapid successive hits
+            const recentCollisions = new Map();
+            const COLLISION_COOLDOWN = 100; // ms between same-pair collisions
+            
+            function shouldProcessCollision(bodyA, bodyB) {
+                const pairKey = `${Math.min(bodyA.id, bodyB.id)}-${Math.max(bodyA.id, bodyB.id)}`;
+                const now = Date.now();
+                const lastCollision = recentCollisions.get(pairKey);
+                
+                if (lastCollision && (now - lastCollision) < COLLISION_COOLDOWN) {
+                    return false; // Skip this collision
+                }
+                
+                recentCollisions.set(pairKey, now);
+                
+                // Clean up old entries periodically
+                if (recentCollisions.size > 100) {
+                    for (const [key, time] of recentCollisions.entries()) {
+                        if ((now - time) > COLLISION_COOLDOWN * 2) {
+                            recentCollisions.delete(key);
+                        }
+                    }
+                }
+                
+                return true;
+            }
+
+            // Collision handling with sound effects
+            Matter.Events.on(engine, 'collisionStart', (event) => {
+                const pairs = event.pairs;
+                for (const pair of pairs) {
+                    const { bodyA, bodyB } = pair;
+                    
+                    // Skip if collision happened too recently
+                    if (!shouldProcessCollision(bodyA, bodyB)) {
+                        continue;
+                    }
+                    if (bodyA.label && bodyB.label) {
+                        // Skip collisions involving aesthetic parts
+                        if (bodyA.label.includes('aesthetic') || bodyB.label.includes('aesthetic')) {
+                            return;
+                        }
+                        
+                        // Player 1's weapon hits Player 2's body (check both directions)
+                        if ((bodyA.label.includes('leftweapon') && bodyB.label.includes('rightmain')) ||
+                            (bodyA.label.includes('rightmain') && bodyB.label.includes('leftweapon'))) {
+                            soundManager.play('weaponHitBody');
+                            
+                            // Get damage from the weapon that hit
+                            const weaponBody = bodyA.label.includes('leftweapon') ? bodyA : bodyB;
+                            const damage = weaponBody.damage || 1; // Default to 1 if no damage specified
+                            
+                            // Trigger impact frame based on damage
+                            if (damage >= 2) {
+                                triggerImpactFrame('heavy'); // Steel weapons get heavy impact
+                            } else {
+                                triggerImpactFrame('medium'); // Iron weapons get medium impact
+                            }
+                            
+                            // In multiplayer, only the controlling player can deal damage
+                            let canDealDamage = true;
+                            if (isMultiplayer) {
+                                // Only player 1 can deal damage with their weapon
+                                canDealDamage = (playerNumber === 1);
+                            }
+                            
+                            if (canDealDamage) {
+                                player2.custom.hp -= damage;
+                                console.log(`Player1 hits Player2 for ${damage} damage! Player2 HP: ${player2.custom.hp}`);
+                                
+                                // Send battle action to sync damage
+                                if (isMultiplayer) {
+                                    sendBattleAction('hit', damage, 2);
+                                }
+                                
+                                // Apply HP-based rotational velocity boost to damaged player
+                                applyHpBoost(player2);
+                                
+                                if (player2.custom.hp <= 0) {
+                                    console.log('Player1 wins!');
+                                    // Play dramatic death sound
+                                    soundManager.play('deathSound', 0.9);
+                                    // Stop battle stats updates
+                                    clearInterval(battleStatsInterval);
+                                    // Final stats update to show 0 HP
+                                    updateBattleStats();
+                                    
+                                    if (isMultiplayer) {
+                                        sendBattleAction('victory', 0, 2);
+                                    } else {
+                                        Matter.Runner.stop(runner);  // Stop on win
+                                    }
+                                }
+                                // Speed gain for Player 1
+                                applySpeedGain(player1, damage);
+                            }
+                        } 
+                        // Player 2's weapon hits Player 1's body (check both directions)
+                        else if ((bodyA.label.includes('rightweapon') && bodyB.label.includes('leftmain')) ||
+                                (bodyA.label.includes('leftmain') && bodyB.label.includes('rightweapon'))) {
+                            soundManager.play('weaponHitBody');
+                            
+                            // Get damage from the weapon that hit
+                            const weaponBody = bodyA.label.includes('rightweapon') ? bodyA : bodyB;
+                            const damage = weaponBody.damage || 1; // Default to 1 if no damage specified
+                            
+                            // Trigger impact frame based on damage
+                            if (damage >= 2) {
+                                triggerImpactFrame('heavy'); // Steel weapons get heavy impact
+                            } else {
+                                triggerImpactFrame('medium'); // Iron weapons get medium impact
+                            }
+                            
+                            // In multiplayer, only the controlling player can deal damage
+                            let canDealDamage = true;
+                            if (isMultiplayer) {
+                                // Only player 2 can deal damage with their weapon
+                                canDealDamage = (playerNumber === 2);
+                            }
+                            
+                            if (canDealDamage) {
+                                player1.custom.hp -= damage;
+                                console.log(`Player2 hits Player1 for ${damage} damage! Player1 HP: ${player1.custom.hp}`);
+                                
+                                // Send battle action to sync damage
+                                if (isMultiplayer) {
+                                    sendBattleAction('hit', damage, 1);
+                                }
+                                
+                                // Apply HP-based rotational velocity boost to damaged player
+                                applyHpBoost(player1);
+                                
+                                if (player1.custom.hp <= 0) {
+                                    console.log('Player2 wins!');
+                                    // Play dramatic death sound
+                                    soundManager.play('deathSound', 0.9);
+                                    // Stop battle stats updates
+                                    clearInterval(battleStatsInterval);
+                                    // Final stats update to show 0 HP
+                                    updateBattleStats();
+                                    
+                                    if (isMultiplayer) {
+                                        sendBattleAction('victory', 0, 1);
+                                    } else {
+                                        Matter.Runner.stop(runner);  // Stop on win
+                                    }
+                                }
+                                // Speed gain for Player 2
+                                applySpeedGain(player2, damage);
+                            }
+                        }
+                        // Weapon clashes with weapon
+                        else if ((bodyA.label.includes('leftweapon') && bodyB.label.includes('rightweapon')) ||
+                                (bodyA.label.includes('rightweapon') && bodyB.label.includes('leftweapon'))) {
+                            soundManager.play('weaponClash', 0.7);
+                            triggerImpactFrame('light'); // Light impact for weapon clashes
+                        }
+                        // Player bodies collide
+                        else if ((bodyA.label.includes('leftmain') && bodyB.label.includes('rightmain')) ||
+                                (bodyA.label.includes('rightmain') && bodyB.label.includes('leftmain'))) {
+                            // Body collision (no sound)
+                        }
+                        // Any collision with walls/boundaries
+                        else if (bodyA.isStatic || bodyB.isStatic) {
+                            // Wall bounce (no sound)
+                        }
+                    }
+                }
+            });
+
+            // Render HP numbers centered in the main body circles
+            Matter.Events.on(render, 'afterRender', () => {
+                const ctx = render.context;
+                ctx.font = 'bold 24px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                if (player1) {
+                    // Find the main body part (first part is the main circle)
+                    const mainBody = player1.parts[1]; // parts[0] is the composite, parts[1] is first body
+                    
+                    // Add text stroke for better visibility
+                    ctx.strokeStyle = '#264653';
+                    ctx.lineWidth = 4;
+                    ctx.strokeText(`${player1.custom.hp}`, mainBody.position.x, mainBody.position.y);
+                    
+                    ctx.fillStyle = '#cadee7';
+                    ctx.fillText(`${player1.custom.hp}`, mainBody.position.x, mainBody.position.y);
+                }
+                if (player2) {
+                    // Find the main body part (first part is the main circle)
+                    const mainBody = player2.parts[1]; // parts[0] is the composite, parts[1] is first body
+                    
+                    // Add text stroke for better visibility
+                    ctx.strokeStyle = '#264653';
+                    ctx.lineWidth = 4;
+                    ctx.strokeText(`${player2.custom.hp}`, mainBody.position.x, mainBody.position.y);
+                    
+                    ctx.fillStyle = '#cadee7';
+                    ctx.fillText(`${player2.custom.hp}`, mainBody.position.x, mainBody.position.y);
+                }
+                
+                // Reset text alignment for other potential text rendering
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'alphabetic';
+            });
+        });
+
+
+
+        // Initialize weapon loading system
+        function initWeaponSystem() {
+            loadPlayerWeapons();
+            
+            // Add event listener for weapon selector dropdown
+            document.getElementById('weaponSelector').addEventListener('change', (e) => {
+                const selectedWeapon = e.target.value;
+                if (selectedWeapon) {
+                    loadSpecificWeapon(selectedWeapon);
+                    e.target.value = ''; // Reset dropdown
+                }
+            });
+            
+            // Add event listener for random weapons button
+            document.getElementById('randomWeaponBtn').addEventListener('click', () => {
+                loadRandomWeapons();
+            });
+        }
+
+        // Initial setup
+        initSoundControls();  // Initialize sound system
+        addButtonSounds();    // Add button hover sounds
+        initWeaponSystem();   // Initialize weapon loading system
+    </script>
+</body>
+</html>

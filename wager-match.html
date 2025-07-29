@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BladeBox - Create Wager Match</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        charcoal: {
+                            DEFAULT: '#264653',
+                            100: '#080e11',
+                            200: '#0f1c22',
+                            300: '#172b32',
+                            400: '#1f3943',
+                            500: '#264653',
+                            600: '#3f7489',
+                            700: '#609db6',
+                            800: '#95bece',
+                            900: '#cadee7'
+                        },
+                        persian_green: {
+                            DEFAULT: '#2a9d8f',
+                            100: '#081f1d',
+                            200: '#113f39',
+                            300: '#195e56',
+                            400: '#217e73',
+                            500: '#2a9d8f',
+                            600: '#3acbba',
+                            700: '#6cd8cb',
+                            800: '#9de5dc',
+                            900: '#cef2ee'
+                        },
+                        saffron: {
+                            DEFAULT: '#e9c46a',
+                            100: '#3b2c09',
+                            200: '#755912',
+                            300: '#b0851a',
+                            400: '#e0ad2e',
+                            500: '#e9c46a',
+                            600: '#edd086',
+                            700: '#f1dca4',
+                            800: '#f6e7c3',
+                            900: '#faf3e1'
+                        },
+                        sandy_brown: {
+                            DEFAULT: '#f4a261',
+                            100: '#401f04',
+                            200: '#803e09',
+                            300: '#c05e0d',
+                            400: '#f07e22',
+                            500: '#f4a261',
+                            600: '#f6b681',
+                            700: '#f8c8a1',
+                            800: '#fbdac0',
+                            900: '#fdede0'
+                        },
+                        burnt_sienna: {
+                            DEFAULT: '#e76f51',
+                            100: '#371107',
+                            200: '#6e220f',
+                            300: '#a43316',
+                            400: '#db441e',
+                            500: '#e76f51',
+                            600: '#ec8b73',
+                            700: '#f1a896',
+                            800: '#f5c5b9',
+                            900: '#fae2dc'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0a101c 0%, #182338 50%, #0d151e 100%);
+            --color-dark-blue: #264653;
+            --color-teal: #2a9d8f;
+            --color-yellow: #e9c46a;
+            --color-orange: #f4a261;
+            --color-burnt-sienna: #e76f51;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body { 
+            background: var(--bg-gradient) !important;
+            background-attachment: fixed !important;
+            background-size: 200% 200% !important;
+            animation: gradientMotion 15s ease infinite !important;
+            font-family: 'Inter', sans-serif;
+            color: #cadee7;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientMotion {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        /* Hover animations */
+        .hover-lift {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Animated background elements */
+        .floating-element {
+            position: absolute;
+            opacity: 0.1;
+            pointer-events: none;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); }
+            100% { transform: translateY(-100px) rotate(360deg); }
+        }
+
+        /* Wager amount cards special styling */
+        .wager-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wager-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .wager-card.selected {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 0 0 3px rgba(233, 196, 106, 0.5);
+        }
+
+        .wager-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .wager-card:hover::before {
+            left: 100%;
+        }
+
+        /* Error message animation */
+        @keyframes slideIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .error-message {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        /* Success message animation */
+        .success-message {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        /* Money symbol animation */
+        @keyframes coinFlip {
+            0% { transform: rotateY(0deg); }
+            50% { transform: rotateY(180deg); }
+            100% { transform: rotateY(360deg); }
+        }
+
+        .coin-flip {
+            animation: coinFlip 2s ease-in-out infinite;
+        }
+
+        /* Input focus effects */
+        .form-input:focus {
+            box-shadow: 0 0 0 3px rgba(42, 157, 143, 0.3);
+        }
+
+        /* Custom radio button styling */
+        .wager-radio {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e9c46a;
+            border-radius: 50%;
+            background: transparent;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .wager-radio:checked {
+            background: #e9c46a;
+            box-shadow: 0 0 0 3px rgba(233, 196, 106, 0.3);
+        }
+
+        .wager-radio:checked::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: #264653;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background Elements -->
+    <div id="backgroundElements" class="fixed inset-0 overflow-hidden pointer-events-none z-0"></div>
+
+    <div class="min-h-screen flex flex-col items-center justify-center p-6 relative z-10">
+        <div class="bg-black/40 backdrop-blur-md rounded-xl border border-persian_green/30 shadow-xl w-full max-w-4xl relative">
+            <!-- Header -->
+            <div class="border-b border-persian_green/30 p-6 text-center">
+                <h1 class="text-3xl font-bold font-[Space_Grotesk] relative inline-block mb-2">
+                    <span class="bg-gradient-to-r from-sandy_brown via-burnt_sienna to-saffron bg-clip-text text-transparent">
+                        Create Wager Match
+                    </span>
+                </h1>
+                <p class="text-white/80 text-lg leading-relaxed font-light max-w-2xl mx-auto">
+                    Set the stakes and forge your destiny. Winner takes all.
+                </p>
+                <div class="flex items-center justify-center mt-3 text-sm text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-saffron" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                    Real money matches require account verification
+                </div>
+            </div>
+
+            <!-- Main Form -->
+            <div class="p-8">
+                <form id="wagerMatchForm" class="space-y-8">
+                    <!-- Room Name Section -->
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-saffron" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clipRule="evenodd" />
+                            </svg>
+                            <h2 class="text-xl font-semibold text-white">Room Details</h2>
+                        </div>
+                        
+                        <div>
+                            <label for="roomName" class="block text-gray-300 text-sm font-medium mb-2">Room Name</label>
+                            <input 
+                                type="text" 
+                                id="roomName" 
+                                name="roomName"
+                                class="form-input w-full bg-black/50 border border-charcoal/50 rounded-lg p-4 text-white focus:outline-none focus:ring-2 focus:ring-persian_green focus:border-transparent shadow-inner transition-all" 
+                                placeholder="Enter a memorable room name..."
+                                required
+                                maxlength="50"
+                            >
+                            <div class="text-xs text-gray-500 mt-1">This name will be visible to other players</div>
+                        </div>
+                    </div>
+
+                    <!-- Wager Amount Section -->
+                    <div class="space-y-6">
+                        <div class="flex items-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-saffron coin-flip" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
+                            </svg>
+                            <h2 class="text-xl font-semibold text-white">Choose Your Wager</h2>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <!-- $10 Wager -->
+                            <label class="wager-card cursor-pointer">
+                                <input type="radio" name="wagerAmount" value="10" class="wager-radio absolute top-4 right-4" required>
+                                <div class="bg-gradient-to-br from-saffron/20 to-saffron/10 border-2 border-saffron/30 rounded-xl p-6 text-center relative overflow-hidden">
+                                    <div class="text-4xl font-bold text-saffron mb-2">$10</div>
+                                    <div class="text-gray-300 text-sm font-medium mb-3">Starter Stakes</div>
+                                    <div class="text-xs text-gray-400 leading-relaxed">
+                                        Perfect for newcomers to test their skills in competitive play
+                                    </div>
+                                    <div class="absolute bottom-2 right-2 text-saffron/30 text-2xl">💰</div>
+                                </div>
+                            </label>
+
+                            <!-- $50 Wager -->
+                            <label class="wager-card cursor-pointer">
+                                <input type="radio" name="wagerAmount" value="50" class="wager-radio absolute top-4 right-4" required>
+                                <div class="bg-gradient-to-br from-sandy_brown/20 to-sandy_brown/10 border-2 border-sandy_brown/30 rounded-xl p-6 text-center relative overflow-hidden">
+                                    <div class="text-4xl font-bold text-sandy_brown mb-2">$50</div>
+                                    <div class="text-gray-300 text-sm font-medium mb-3">Standard Stakes</div>
+                                    <div class="text-xs text-gray-400 leading-relaxed">
+                                        The sweet spot for experienced players seeking serious competition
+                                    </div>
+                                    <div class="absolute bottom-2 right-2 text-sandy_brown/30 text-2xl">💎</div>
+                                </div>
+                            </label>
+
+                            <!-- $100 Wager -->
+                            <label class="wager-card cursor-pointer">
+                                <input type="radio" name="wagerAmount" value="100" class="wager-radio absolute top-4 right-4" required>
+                                <div class="bg-gradient-to-br from-burnt_sienna/20 to-burnt_sienna/10 border-2 border-burnt_sienna/30 rounded-xl p-6 text-center relative overflow-hidden">
+                                    <div class="text-4xl font-bold text-burnt_sienna mb-2">$100</div>
+                                    <div class="text-gray-300 text-sm font-medium mb-3">High Stakes</div>
+                                    <div class="text-xs text-gray-400 leading-relaxed">
+                                        For masters of the blade seeking ultimate glory and rewards
+                                    </div>
+                                    <div class="absolute bottom-2 right-2 text-burnt_sienna/30 text-2xl">👑</div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Wager Info -->
+                        <div class="bg-charcoal/30 border border-charcoal/50 rounded-lg p-4">
+                            <div class="flex items-start space-x-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-persian_green mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                </svg>
+                                <div class="text-sm text-gray-300">
+                                    <p class="font-medium mb-1">How Wager Matches Work:</p>
+                                    <ul class="space-y-1 text-xs text-gray-400">
+                                        <li>• Both players deposit the wager amount before the match begins</li>
+                                        <li>• Winner takes the full pot (minus small platform fee)</li>
+                                        <li>• Funds are held securely until match completion</li>
+                                        <li>• All matches are recorded for dispute resolution</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Options Section -->
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-saffron" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                            </svg>
+                            <h2 class="text-xl font-semibold text-white">Security Options</h2>
+                        </div>
+
+                        <div class="bg-charcoal/20 border border-charcoal/40 rounded-lg p-6">
+                            <div class="flex items-start space-x-4">
+                                <input 
+                                    type="checkbox" 
+                                    id="usePassword" 
+                                    class="mt-1 rounded text-persian_green focus:ring-persian_green focus:ring-offset-0 bg-black/50 border-charcoal/50"
+                                >
+                                <div class="flex-1">
+                                    <label for="usePassword" class="text-gray-300 font-medium cursor-pointer">Password Protect Room</label>
+                                    <p class="text-sm text-gray-400 mt-1">Only players with the password can join your wager match</p>
+                                </div>
+                            </div>
+
+                            <div id="passwordField" class="hidden mt-4 pl-8">
+                                <label for="roomPassword" class="block text-gray-300 text-sm font-medium mb-2">Room Password</label>
+                                <input 
+                                    type="password" 
+                                    id="roomPassword" 
+                                    name="roomPassword"
+                                    class="form-input w-full bg-black/50 border border-charcoal/50 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-persian_green focus:border-transparent shadow-inner" 
+                                    placeholder="Enter room password..."
+                                    maxlength="20"
+                                >
+                                <div class="text-xs text-gray-500 mt-1">Share this password only with your intended opponent</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error/Success Messages -->
+                    <div id="errorMessage" class="hidden p-4 bg-burnt_sienna/20 border border-burnt_sienna/30 rounded-lg text-burnt_sienna-300 text-sm error-message">
+                        <div class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                            <span id="errorText"></span>
+                        </div>
+                    </div>
+
+                    <div id="successMessage" class="hidden p-4 bg-persian_green/20 border border-persian_green/30 rounded-lg text-persian_green-300 text-sm success-message">
+                        <div class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            <span id="successText"></span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-4 pt-4">
+                        <button 
+                            type="submit"
+                            class="hover-lift flex-1 bg-gradient-to-r from-sandy_brown via-burnt_sienna to-sandy_brown text-charcoal py-4 px-8 rounded-lg font-bold text-lg shadow-lg relative overflow-hidden"
+                        >
+                            <span class="relative z-10 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
+                                </svg>
+                                Create Wager Match
+                            </span>
+                        </button>
+                        
+                        <button 
+                            type="button"
+                            onclick="window.location.href='lobby.html'"
+                            class="hover-lift bg-charcoal hover:bg-charcoal-600 text-white py-4 px-8 rounded-lg font-medium text-lg shadow-lg"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Background animation
+        function createFloatingElements() {
+            const container = document.getElementById('backgroundElements');
+            const symbols = ['💰', '💎', '👑', '🏆', '⚔️', '🛡️', '⚡', '🔥'];
+            
+            setInterval(() => {
+                if (container.children.length < 6) {
+                    const element = document.createElement('div');
+                    element.className = 'floating-element text-3xl';
+                    element.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+                    element.style.left = Math.random() * 100 + '%';
+                    element.style.animationDelay = '0s';
+                    element.style.animationDuration = (20 + Math.random() * 10) + 's';
+                    container.appendChild(element);
+                    
+                    // Remove element after animation
+                    setTimeout(() => {
+                        if (element.parentNode) {
+                            element.parentNode.removeChild(element);
+                        }
+                    }, 30000);
+                }
+            }, 3000);
+        }
+
+        // Message handling
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            const successMessage = document.getElementById('successMessage');
+            
+            successMessage.classList.add('hidden');
+            errorText.textContent = message;
+            errorMessage.classList.remove('hidden');
+            
+            setTimeout(() => {
+                errorMessage.classList.add('hidden');
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+            const successText = document.getElementById('successText');
+            
+            errorMessage.classList.add('hidden');
+            successText.textContent = message;
+            successMessage.classList.remove('hidden');
+            
+            setTimeout(() => {
+                successMessage.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Wager card selection
+        function setupWagerCards() {
+            const wagerCards = document.querySelectorAll('.wager-card');
+            const radioButtons = document.querySelectorAll('input[name="wagerAmount"]');
+            
+            radioButtons.forEach((radio, index) => {
+                radio.addEventListener('change', () => {
+                    wagerCards.forEach(card => card.classList.remove('selected'));
+                    if (radio.checked) {
+                        wagerCards[index].classList.add('selected');
+                    }
+                });
+            });
+            
+            wagerCards.forEach((card, index) => {
+                card.addEventListener('click', () => {
+                    radioButtons[index].checked = true;
+                    radioButtons[index].dispatchEvent(new Event('change'));
+                });
+            });
+        }
+
+        // Password field toggle
+        function setupPasswordToggle() {
+            const usePasswordCheckbox = document.getElementById('usePassword');
+            const passwordField = document.getElementById('passwordField');
+            const passwordInput = document.getElementById('roomPassword');
+            
+            usePasswordCheckbox.addEventListener('change', () => {
+                if (usePasswordCheckbox.checked) {
+                    passwordField.classList.remove('hidden');
+                    passwordInput.required = true;
+                } else {
+                    passwordField.classList.add('hidden');
+                    passwordInput.required = false;
+                    passwordInput.value = '';
+                }
+            });
+        }
+
+        // Form submission
+        function setupForm() {
+            const form = document.getElementById('wagerMatchForm');
+            
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                const roomName = formData.get('roomName');
+                const wagerAmount = formData.get('wagerAmount');
+                const usePassword = document.getElementById('usePassword').checked;
+                const password = usePassword ? formData.get('roomPassword') : null;
+                
+                // Validation
+                if (!roomName || !wagerAmount) {
+                    showError('Please fill in all required fields');
+                    return;
+                }
+                
+                if (usePassword && !password) {
+                    showError('Please enter a password or uncheck password protection');
+                    return;
+                }
+                
+                // Mock creation (replace with actual API call)
+                console.log('Creating wager match:', {
+                    roomName,
+                    wagerAmount: `$${wagerAmount}`,
+                    usePassword,
+                    password
+                });
+                
+                showSuccess(`Wager match "${roomName}" created successfully! Stake: $${wagerAmount}`);
+                
+                // Simulate redirect to waiting room after 2 seconds
+                setTimeout(() => {
+                    // In a real app, you would redirect to a waiting room or lobby
+                    window.location.href = 'lobby.html';
+                }, 2000);
+            });
+        }
+
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', () => {
+            createFloatingElements();
+            setupWagerCards();
+            setupPasswordToggle();
+            setupForm();
+        });
+    </script>
+</body>
+</html> 

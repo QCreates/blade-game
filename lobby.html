@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BladeBox - Game Lobby</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        charcoal: {
+                            DEFAULT: '#264653',
+                            100: '#080e11',
+                            200: '#0f1c22',
+                            300: '#172b32',
+                            400: '#1f3943',
+                            500: '#264653',
+                            600: '#3f7489',
+                            700: '#609db6',
+                            800: '#95bece',
+                            900: '#cadee7'
+                        },
+                        persian_green: {
+                            DEFAULT: '#2a9d8f',
+                            100: '#081f1d',
+                            200: '#113f39',
+                            300: '#195e56',
+                            400: '#217e73',
+                            500: '#2a9d8f',
+                            600: '#3acbba',
+                            700: '#6cd8cb',
+                            800: '#9de5dc',
+                            900: '#cef2ee'
+                        },
+                        saffron: {
+                            DEFAULT: '#e9c46a',
+                            100: '#3b2c09',
+                            200: '#755912',
+                            300: '#b0851a',
+                            400: '#e0ad2e',
+                            500: '#e9c46a',
+                            600: '#edd086',
+                            700: '#f1dca4',
+                            800: '#f6e7c3',
+                            900: '#faf3e1'
+                        },
+                        sandy_brown: {
+                            DEFAULT: '#f4a261',
+                            100: '#401f04',
+                            200: '#803e09',
+                            300: '#c05e0d',
+                            400: '#f07e22',
+                            500: '#f4a261',
+                            600: '#f6b681',
+                            700: '#f8c8a1',
+                            800: '#fbdac0',
+                            900: '#fdede0'
+                        },
+                        burnt_sienna: {
+                            DEFAULT: '#e76f51',
+                            100: '#371107',
+                            200: '#6e220f',
+                            300: '#a43316',
+                            400: '#db441e',
+                            500: '#e76f51',
+                            600: '#ec8b73',
+                            700: '#f1a896',
+                            800: '#f5c5b9',
+                            900: '#fae2dc'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0a101c 0%, #182338 50%, #0d151e 100%);
+            --color-dark-blue: #264653;
+            --color-teal: #2a9d8f;
+            --color-yellow: #e9c46a;
+            --color-orange: #f4a261;
+            --color-burnt-sienna: #e76f51;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body { 
+            background: var(--bg-gradient) !important;
+            background-attachment: fixed !important;
+            background-size: 200% 200% !important;
+            animation: gradientMotion 15s ease infinite !important;
+            font-family: 'Inter', sans-serif;
+            color: #cadee7;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientMotion {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(42, 157, 143, 0.5);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(42, 157, 143, 0.8);
+        }
+
+        /* Hover animations */
+        .hover-lift {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Animated background pieces */
+        .floating-piece {
+            position: absolute;
+            opacity: 0.1;
+            pointer-events: none;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); }
+            100% { transform: translateY(-100px) rotate(360deg); }
+        }
+
+        /* Error message animation */
+        @keyframes slideIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .error-message {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        /* Wager button special styling */
+        .wager-btn {
+            background: linear-gradient(135deg, #e76f51 0%, #f4a261 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wager-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .wager-btn:hover::before {
+            left: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background Elements -->
+    <div id="backgroundElements" class="fixed inset-0 overflow-hidden pointer-events-none z-0"></div>
+
+    <div class="min-h-screen flex flex-col items-center justify-center p-6 relative z-10">
+        <div class="bg-black/40 backdrop-blur-md rounded-xl border border-persian_green/30 shadow-xl w-full max-w-4xl relative">
+            <!-- Header -->
+            <div class="border-b border-persian_green/30 p-6 text-center">
+                <h1 class="text-4xl font-bold font-[Space_Grotesk] relative inline-block">
+                    <span class="bg-gradient-to-r from-saffron via-sandy_brown to-burnt_sienna bg-clip-text text-transparent">
+                        BladeBox
+                    </span>
+                    <span class="text-white text-2xl font-normal ml-2">Lobby</span>
+                </h1>
+                <p class="text-white/80 text-lg mt-3 mb-2 leading-relaxed font-light max-w-2xl mx-auto">
+                    Forge Your Weapon. Choose Your Battle. Victory Awaits.
+                </p>
+                <div id="connectionStatus" class="text-gray-500 text-xs mt-2">
+                    <span class="inline-block w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                    Ready to Battle
+                </div>
+            </div>
+
+            <!-- Equipped Weapon Status -->
+            <div id="equippedWeaponStatus" class="p-4 bg-black/20 border-b border-persian_green/30">
+                <!-- Will be populated by JavaScript -->
+            </div>
+
+            <!-- Main Action Buttons -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-6">
+                <button onclick="window.location.href='craft-weapon.html'" class="hover-lift bg-saffron hover:bg-saffron-600 text-charcoal py-4 px-6 rounded-lg font-medium flex items-center justify-center shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                    </svg>
+                    Craft Weapon
+                </button>
+
+                <button id="practiceBtn" class="hover-lift bg-persian_green hover:bg-persian_green-600 text-white py-4 px-6 rounded-lg font-medium flex items-center justify-center shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0112.12 15.12z" clipRule="evenodd" />
+                    </svg>
+                    Practice Match
+                </button>
+                
+                <button id="wagerBtn" class="hover-lift wager-btn text-charcoal py-4 px-6 rounded-lg font-medium flex items-center justify-center shadow-lg relative overflow-hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
+                    </svg>
+                    Wager Match
+                </button>
+                
+                <button id="refreshBtn" class="hover-lift bg-charcoal hover:bg-charcoal-600 text-white py-4 px-6 rounded-lg font-medium flex items-center justify-center shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                    </svg>
+                    Refresh Rooms
+                </button>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="hidden mx-6 mb-4 p-3 bg-burnt_sienna/20 border border-burnt_sienna/30 rounded text-burnt_sienna-300 text-sm shadow-inner error-message">
+                <div class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <span id="errorText"></span>
+                </div>
+            </div>
+
+            <!-- Current Room Status -->
+            <div id="currentRoomStatus" class="hidden mx-6 mb-4 p-4 border border-saffron/30 rounded-lg bg-saffron/10">
+                <h3 class="text-lg font-semibold text-saffron mb-2">Current Room</h3>
+                <div id="roomStatusContent"></div>
+            </div>
+
+            <!-- Create Practice Room Form -->
+            <div id="practiceForm" class="hidden p-6 border-t border-persian_green/30">
+                <h2 class="text-xl font-semibold text-white mb-4 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-saffron" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0112.12 15.12z" clipRule="evenodd" />
+                    </svg>
+                    Create Practice Room
+                </h2>
+                <form id="practiceRoomForm" class="space-y-4">
+                    <div>
+                        <label for="practiceRoomName" class="block text-gray-400 text-sm mb-1">Room Name</label>
+                        <input type="text" id="practiceRoomName" class="w-full bg-black/50 border border-charcoal/50 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-persian_green shadow-inner" placeholder="Enter room name..." required>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="checkbox" id="practiceUsePassword" class="mr-2 rounded text-persian_green focus:ring-persian_green">
+                        <label for="practiceUsePassword" class="text-gray-400 text-sm">Protect with password</label>
+                    </div>
+                    
+                    <div id="practicePasswordField" class="hidden">
+                        <label for="practiceRoomPassword" class="block text-gray-400 text-sm mb-1">Password</label>
+                        <input type="password" id="practiceRoomPassword" class="w-full bg-black/50 border border-charcoal/50 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-persian_green shadow-inner" placeholder="Enter password...">
+                    </div>
+                    
+                    <div class="flex space-x-3">
+                        <button type="submit" class="hover-lift bg-persian_green hover:bg-persian_green-600 text-white py-2 px-4 rounded-md flex-1 shadow-lg font-medium">
+                            Create Practice Room
+                        </button>
+                        <button type="button" id="cancelPractice" class="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-md shadow-lg">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Create Wager Room Form -->
+            <div id="wagerForm" class="hidden p-6 border-t border-persian_green/30">
+                <h2 class="text-xl font-semibold text-white mb-4 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-saffron" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
+                    </svg>
+                    Create Wager Room
+                </h2>
+                <form id="wagerRoomForm" class="space-y-4">
+                    <div>
+                        <label for="wagerRoomName" class="block text-gray-400 text-sm mb-1">Room Name</label>
+                        <input type="text" id="wagerRoomName" class="w-full bg-black/50 border border-charcoal/50 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-persian_green shadow-inner" placeholder="Enter room name..." required>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-400 text-sm mb-2">Wager Amount</label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <label class="flex items-center justify-center p-3 bg-black/30 border border-saffron/30 rounded-lg cursor-pointer hover:bg-saffron/10 transition-colors">
+                                <input type="radio" name="wagerAmount" value="10" class="mr-2" required>
+                                <span class="text-saffron font-medium">$10</span>
+                            </label>
+                            <label class="flex items-center justify-center p-3 bg-black/30 border border-sandy_brown/30 rounded-lg cursor-pointer hover:bg-sandy_brown/10 transition-colors">
+                                <input type="radio" name="wagerAmount" value="50" class="mr-2" required>
+                                <span class="text-sandy_brown font-medium">$50</span>
+                            </label>
+                            <label class="flex items-center justify-center p-3 bg-black/30 border border-burnt_sienna/30 rounded-lg cursor-pointer hover:bg-burnt_sienna/10 transition-colors">
+                                <input type="radio" name="wagerAmount" value="100" class="mr-2" required>
+                                <span class="text-burnt_sienna font-medium">$100</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="checkbox" id="wagerUsePassword" class="mr-2 rounded text-persian_green focus:ring-persian_green">
+                        <label for="wagerUsePassword" class="text-gray-400 text-sm">Protect with password</label>
+                    </div>
+                    
+                    <div id="wagerPasswordField" class="hidden">
+                        <label for="wagerRoomPassword" class="block text-gray-400 text-sm mb-1">Password</label>
+                        <input type="password" id="wagerRoomPassword" class="w-full bg-black/50 border border-charcoal/50 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-persian_green shadow-inner" placeholder="Enter password...">
+                    </div>
+                    
+                    <div class="flex space-x-3">
+                        <button type="submit" class="hover-lift wager-btn text-charcoal py-2 px-4 rounded-md flex-1 shadow-lg font-medium relative overflow-hidden">
+                            Create Wager Room
+                        </button>
+                        <button type="button" id="cancelWager" class="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-md shadow-lg">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Available Rooms -->
+            <div class="p-6 border-t border-persian_green/30">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-white flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-saffron" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+                        </svg>
+                        Available Rooms
+                    </h2>
+                    <span id="roomCount" class="text-gray-400 text-sm bg-black/30 px-2 py-1 rounded-full">
+                        0 rooms
+                    </span>
+                </div>
+                
+                <div id="roomsList" class="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
+                    <!-- Rooms will be populated here -->
+                </div>
+
+                <!-- No rooms placeholder -->
+                <div id="noRoomsPlaceholder" class="text-center py-8 bg-black/20 rounded-lg border border-dashed border-gray-700">
+                    <p class="text-gray-400">No rooms available</p>
+                    <p class="text-gray-500 text-sm mt-1">Create a new room to get started</p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="border-t border-persian_green/30 p-4 text-center">
+                <button onclick="window.location.href='index.html'" class="text-saffron hover:text-saffron-300 transition-colors text-sm font-medium">
+                    ← Back to Game
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.io client -->
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+        // Game state
+        let rooms = [];
+        let currentForm = null;
+        let socket = null;
+        let isConnected = false;
+        let currentRoomId = null;
+        let currentRoomData = null;
+
+        // DOM elements
+        const practiceBtn = document.getElementById('practiceBtn');
+        const wagerBtn = document.getElementById('wagerBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const practiceForm = document.getElementById('practiceForm');
+        const wagerForm = document.getElementById('wagerForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const roomsList = document.getElementById('roomsList');
+        const roomCount = document.getElementById('roomCount');
+        const noRoomsPlaceholder = document.getElementById('noRoomsPlaceholder');
+        const currentRoomStatus = document.getElementById('currentRoomStatus');
+        const roomStatusContent = document.getElementById('roomStatusContent');
+
+        // Background animation
+        function createFloatingElements() {
+            const container = document.getElementById('backgroundElements');
+            const symbols = ['⚔️', '🛡️', '💎', '⚡', '🔥', '❄️', '🗡️', '🏹'];
+            
+            setInterval(() => {
+                if (container.children.length < 8) {
+                    const element = document.createElement('div');
+                    element.className = 'floating-piece text-2xl';
+                    element.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+                    element.style.left = Math.random() * 100 + '%';
+                    element.style.animationDelay = '0s';
+                    element.style.animationDuration = (15 + Math.random() * 10) + 's';
+                    container.appendChild(element);
+                    
+                    // Remove element after animation
+                    setTimeout(() => {
+                        if (element.parentNode) {
+                            element.parentNode.removeChild(element);
+                        }
+                    }, 25000);
+                }
+            }, 2000);
+        }
+
+        // Error handling
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.remove('hidden');
+            setTimeout(() => {
+                errorMessage.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Form management
+        function showForm(formType) {
+            console.log('showForm called with:', formType);
+            hideAllForms();
+            currentForm = formType;
+            
+            if (formType === 'practice') {
+                console.log('Showing practice form');
+                practiceForm.classList.remove('hidden');
+            } else if (formType === 'wager') {
+                console.log('Showing wager form');
+                wagerForm.classList.remove('hidden');
+            }
+        }
+
+        function hideAllForms() {
+            practiceForm.classList.add('hidden');
+            wagerForm.classList.add('hidden');
+            currentForm = null;
+        }
+
+        // WebSocket connection management
+        function initializeSocket() {
+            // Connect to server (adjust URL for your setup)
+            socket = io('http://localhost:3000');
+            
+            socket.on('connect', () => {
+                console.log('Connected to server:', socket.id);
+                isConnected = true;
+                updateConnectionStatus('Connected', true);
+                console.log('Socket connected, isConnected:', isConnected);
+            });
+            
+            socket.on('disconnect', () => {
+                console.log('Disconnected from server');
+                isConnected = false;
+                updateConnectionStatus('Disconnected', false);
+                showError('Connection lost. Trying to reconnect...');
+            });
+            
+            socket.on('connection-status', (data) => {
+                console.log('Connection status:', data);
+            });
+            
+            socket.on('rooms-update', (newRooms) => {
+                console.log('Rooms updated:', newRooms);
+                rooms = newRooms;
+                
+                // Update current room data if we're in a room
+                if (currentRoomId) {
+                    const updatedRoom = rooms.find(room => room.id === currentRoomId);
+                    if (updatedRoom) {
+                        console.log('Updating current room data from:', currentRoomData, 'to:', updatedRoom);
+                        currentRoomData = updatedRoom;
+                        updateCurrentRoomStatus();
+                    }
+                }
+                
+                renderRooms();
+            });
+            
+            socket.on('room-created', (data) => {
+                console.log('Room created:', data);
+                currentRoomId = data.roomId;
+                currentRoomData = data.room;
+                showSuccess(data.message);
+                hideAllForms();
+                updateCurrentRoomStatus();
+            });
+            
+            socket.on('room-joined', (data) => {
+                console.log('Joined room:', data);
+                currentRoomId = data.roomId;
+                currentRoomData = data.room;
+                showSuccess(data.message);
+                updateCurrentRoomStatus();
+            });
+
+            socket.on('room-left', (data) => {
+                console.log('Left room:', data);
+                currentRoomId = null;
+                currentRoomData = null;
+                showSuccess(data.message);
+                updateCurrentRoomStatus();
+            });
+            
+            socket.on('room-full', (data) => {
+                console.log('Room full event received:', data);
+                console.log('Current room data before room-full update:', currentRoomData);
+                currentRoomData = data.room;
+                console.log('Current room data after room-full update:', currentRoomData);
+                showSuccess(data.message + ' Ready to start battle!');
+                updateCurrentRoomStatus();
+            });
+            
+            socket.on('player-joined', (data) => {
+                console.log('Player joined room:', data);
+                currentRoomData = data.room;
+                showSuccess('Another player joined your room!');
+                updateCurrentRoomStatus();
+            });
+            
+            socket.on('player-left', (data) => {
+                console.log('Player left room:', data);
+                showError('A player left the room');
+                // Room data will be updated via rooms-update event
+            });
+            
+            socket.on('battle-starting', (data) => {
+                console.log('Battle starting:', data);
+                showSuccess(data.message);
+                
+                // Disable the start battle button to prevent multiple clicks
+                const startBtn = document.querySelector('button[onclick="startBattle()"]');
+                if (startBtn) {
+                    startBtn.disabled = true;
+                    startBtn.textContent = 'Starting Battle...';
+                    startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            });
+
+            socket.on('battle-redirect', (data) => {
+                console.log('Battle redirect:', data);
+                showSuccess('Redirecting to battle arena...');
+                
+                // Redirect both players simultaneously with battle room ID
+                setTimeout(() => {
+                    const battleUrl = `${data.url}?battleRoom=${data.battleRoomId}`;
+                    console.log('Redirecting to:', battleUrl);
+                    window.location.href = battleUrl;
+                }, 500);
+            });
+
+            socket.on('error', (data) => {
+                console.error('Server error:', data);
+                showError(data.message || 'An error occurred');
+            });
+        }
+        
+        function updateConnectionStatus(status, connected) {
+            const statusElement = document.getElementById('connectionStatus');
+            if (statusElement) {
+                statusElement.innerHTML = `
+                    <span class="inline-block w-2 h-2 ${connected ? 'bg-green-500' : 'bg-red-500'} rounded-full mr-1"></span>
+                    ${status}
+                `;
+            }
+        }
+        
+        function showSuccess(message) {
+            // Create success message similar to error message
+            const successDiv = document.createElement('div');
+            successDiv.className = 'mx-6 mb-4 p-3 bg-persian_green/20 border border-persian_green/30 rounded text-persian_green-300 text-sm shadow-inner success-message';
+            successDiv.innerHTML = `
+                <div class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            // Insert after header
+            const header = document.querySelector('.border-b.border-persian_green\\/30');
+            header.parentNode.insertBefore(successDiv, header.nextSibling);
+            
+            setTimeout(() => {
+                if (successDiv.parentNode) {
+                    successDiv.parentNode.removeChild(successDiv);
+                }
+            }, 5000);
+        }
+
+        // Room rendering
+        function renderRooms() {
+            if (rooms.length === 0) {
+                roomsList.innerHTML = '';
+                noRoomsPlaceholder.classList.remove('hidden');
+                roomCount.textContent = '0 rooms';
+                return;
+            }
+
+            noRoomsPlaceholder.classList.add('hidden');
+            roomCount.textContent = `${rooms.length} ${rooms.length === 1 ? 'room' : 'rooms'}`;
+
+            roomsList.innerHTML = rooms.map(room => {
+                const isMyRoom = currentRoomId === room.id;
+                const isFull = parseInt(room.players) >= parseInt(room.maxPlayers);
+                
+                return `
+                    <div class="bg-black/30 border ${isMyRoom ? 'border-saffron/50 border-l-4 border-l-saffron' : 'border-charcoal/50 hover:bg-black/50'} rounded-lg p-4 transition-all">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-white font-medium flex items-center">
+                                    ${room.name}
+                                    ${room.type === 'wager' ? `<span class="ml-2 px-2 py-1 bg-sandy_brown/20 rounded text-sandy_brown text-xs">$${room.wagerAmount}</span>` : ''}
+                                    ${isMyRoom ? '<span class="ml-2 px-2 py-1 bg-saffron/20 rounded text-saffron text-xs">Your Room</span>' : ''}
+                                </h3>
+                                <p class="text-gray-500 text-sm">
+                                    Players: ${room.players}/${room.maxPlayers} • ${room.type === 'practice' ? 'Practice' : 'Wager'}
+                                </p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                ${room.hasPassword ? '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-saffron" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>' : ''}
+                                ${isMyRoom 
+                                    ? '<span class="text-saffron text-sm">In Room</span>'
+                                    : isFull 
+                                        ? '<span class="bg-gray-700 text-gray-400 py-1 px-3 rounded text-sm">Full</span>'
+                                        : `<button onclick="joinRoom('${room.id}')" class="bg-persian_green hover:bg-persian_green-600 text-white py-1 px-3 rounded text-sm transition-all shadow hover:shadow-md transform hover:-translate-y-0.5 font-semibold">Join</button>`
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateCurrentRoomStatus() {
+            console.log('updateCurrentRoomStatus called with currentRoomData:', currentRoomData);
+            
+            if (!currentRoomData) {
+                console.log('No currentRoomData, hiding status');
+                currentRoomStatus.classList.add('hidden');
+                return;
+            }
+
+            currentRoomStatus.classList.remove('hidden');
+            const playerCount = parseInt(currentRoomData.players) || 0;
+            const maxPlayers = parseInt(currentRoomData.maxPlayers) || 2;
+            const isFull = playerCount >= maxPlayers;
+            
+            console.log(`Room status update: players=${currentRoomData.players} (parsed: ${playerCount}), max=${currentRoomData.maxPlayers} (parsed: ${maxPlayers}), isFull=${isFull}`);
+            
+            roomStatusContent.innerHTML = `
+                <div class="flex justify-between items-center mb-3">
+                    <div>
+                        <h4 class="text-white font-medium">${currentRoomData.name}</h4>
+                        <p class="text-gray-300 text-sm">Players: ${playerCount}/${maxPlayers}</p>
+                    </div>
+                    <button onclick="leaveRoom()" class="bg-burnt_sienna hover:bg-burnt_sienna-600 text-white py-1 px-3 rounded text-sm">
+                        Leave Room
+                    </button>
+                </div>
+                ${isFull 
+                    ? `<div class="text-center">
+                        <p class="text-persian_green mb-3">🎮 Room is full! Ready to battle!</p>
+                        <button onclick="startBattle()" class="bg-persian_green hover:bg-persian_green-600 text-white py-2 px-6 rounded-lg font-medium">
+                            Start Battle
+                        </button>
+                       </div>`
+                    : `<p class="text-saffron text-center">⏳ Waiting for another player to join...</p>`
+                }
+            `;
+        }
+
+        // Room actions
+        function joinRoom(roomId) {
+            if (!socket || !isConnected) {
+                showError('Not connected to server');
+                return;
+            }
+            
+            const room = rooms.find(r => r.id === roomId);
+            if (!room) return;
+
+            let password = null;
+            if (room.hasPassword) {
+                password = prompt('Enter room password:');
+                if (!password) return;
+            }
+
+            console.log(`Joining room ${roomId}`);
+            socket.emit('join-room', { roomId, password });
+        }
+
+        function leaveRoom() {
+            if (!socket || !isConnected) {
+                showError('Not connected to server');
+                return;
+            }
+            socket.emit('leave-room');
+        }
+
+        function startBattle() {
+            if (!currentRoomData || parseInt(currentRoomData.players) < 2) {
+                showError('Need 2 players to start battle');
+                return;
+            }
+            
+            if (!socket || !isConnected) {
+                showError('Not connected to server');
+                return;
+            }
+            
+            console.log('Starting battle...');
+            socket.emit('start-battle', { roomId: currentRoomId });
+        }
+
+        function refreshRooms() {
+            if (!socket || !isConnected) {
+                showError('Not connected to server');
+                return;
+            }
+            
+            console.log('Refreshing rooms...');
+            socket.emit('get-rooms');
+        }
+
+        // Event listeners
+        practiceBtn.addEventListener('click', () => {
+            console.log('Practice button clicked');
+            showForm('practice');
+        });
+        wagerBtn.addEventListener('click', () => {
+            window.location.href = 'wager-match.html';
+        });
+        refreshBtn.addEventListener('click', refreshRooms);
+
+        // Form event listeners
+        document.getElementById('cancelPractice').addEventListener('click', hideAllForms);
+        document.getElementById('cancelWager').addEventListener('click', hideAllForms);
+
+        // Password field toggles
+        document.getElementById('practiceUsePassword').addEventListener('change', (e) => {
+            const passwordField = document.getElementById('practicePasswordField');
+            if (e.target.checked) {
+                passwordField.classList.remove('hidden');
+                document.getElementById('practiceRoomPassword').required = true;
+            } else {
+                passwordField.classList.add('hidden');
+                document.getElementById('practiceRoomPassword').required = false;
+            }
+        });
+
+        document.getElementById('wagerUsePassword').addEventListener('change', (e) => {
+            const passwordField = document.getElementById('wagerPasswordField');
+            if (e.target.checked) {
+                passwordField.classList.remove('hidden');
+                document.getElementById('wagerRoomPassword').required = true;
+            } else {
+                passwordField.classList.add('hidden');
+                document.getElementById('wagerRoomPassword').required = false;
+            }
+        });
+
+        // Form submissions
+        document.getElementById('practiceRoomForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            if (!socket || !isConnected) {
+                showError('Not connected to server');
+                return;
+            }
+            
+            const formData = new FormData(e.target);
+            const roomName = formData.get('practiceRoomName') || document.getElementById('practiceRoomName').value;
+            const usePassword = document.getElementById('practiceUsePassword').checked;
+            const password = usePassword ? document.getElementById('practiceRoomPassword').value : null;
+
+            const roomData = {
+                name: roomName,
+                type: 'practice',
+                password: password
+            };
+
+            console.log('Creating practice room:', roomData);
+            socket.emit('create-room', roomData);
+            e.target.reset();
+        });
+
+        document.getElementById('wagerRoomForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            if (!socket || !isConnected) {
+                showError('Not connected to server');
+                return;
+            }
+            
+            const formData = new FormData(e.target);
+            const roomName = formData.get('wagerRoomName') || document.getElementById('wagerRoomName').value;
+            const wagerAmount = document.querySelector('input[name="wagerAmount"]:checked')?.value;
+            const usePassword = document.getElementById('wagerUsePassword').checked;
+            const password = usePassword ? document.getElementById('wagerRoomPassword').value : null;
+
+            if (!wagerAmount) {
+                showError('Please select a wager amount');
+                return;
+            }
+
+            const roomData = {
+                name: roomName,
+                type: 'wager',
+                wagerAmount: parseInt(wagerAmount),
+                password: password
+            };
+
+            console.log('Creating wager room:', roomData);
+            socket.emit('create-room', roomData);
+            e.target.reset();
+        });
+
+        // Weapon storage system (simplified for lobby)
+        function getEquippedWeapon() {
+            try {
+                const equippedId = localStorage.getItem('bladebox_equipped_weapon');
+                if (!equippedId) return null;
+                
+                const weapons = JSON.parse(localStorage.getItem('bladebox_weapons')) || {};
+                return weapons[equippedId] || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function updateEquippedWeaponStatus() {
+            const equippedWeapon = getEquippedWeapon();
+            const container = document.getElementById('equippedWeaponStatus');
+            
+            if (!equippedWeapon) {
+                container.innerHTML = `
+                    <div class="text-center text-gray-400">
+                        <div class="text-sm">⚔️ No weapon equipped</div>
+                        <div class="text-xs text-gray-500 mt-1">Visit the weapon forge to craft and equip a weapon</div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="flex items-center justify-center gap-3">
+                        <div class="text-center">
+                            <div class="text-saffron font-medium">⚔️ ${equippedWeapon.name}</div>
+                            <div class="text-xs text-gray-400">Ready for battle • Mana: ${equippedWeapon.manaUsed || 0}/100</div>
+                        </div>
+                        <button onclick="window.location.href='craft-weapon.html'" class="text-xs px-3 py-1 bg-charcoal/50 hover:bg-charcoal/70 text-white rounded transition-colors">
+                            Modify
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            createFloatingElements();
+            initializeSocket();
+            updateEquippedWeaponStatus();
+        });
+    </script>
+</body>
+</html> 

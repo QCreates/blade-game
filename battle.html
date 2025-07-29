@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BladeBox Battle Arena</title>
+    <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        charcoal: {
+                            DEFAULT: '#264653',
+                            100: '#080e11',
+                            200: '#0f1c22',
+                            300: '#172b32',
+                            400: '#1f3943',
+                            500: '#264653',
+                            600: '#3f7489',
+                            700: '#609db6',
+                            800: '#95bece',
+                            900: '#cadee7'
+                        },
+                        persian_green: {
+                            DEFAULT: '#2a9d8f',
+                            100: '#081f1d',
+                            200: '#113f39',
+                            300: '#195e56',
+                            400: '#217e73',
+                            500: '#2a9d8f',
+                            600: '#3acbba',
+                            700: '#6cd8cb',
+                            800: '#9de5dc',
+                            900: '#cef2ee'
+                        },
+                        saffron: {
+                            DEFAULT: '#e9c46a',
+                            100: '#3b2c09',
+                            200: '#755912',
+                            300: '#b0851a',
+                            400: '#e0ad2e',
+                            500: '#e9c46a',
+                            600: '#edd086',
+                            700: '#f1dca4',
+                            800: '#f6e7c3',
+                            900: '#faf3e1'
+                        },
+                        sandy_brown: {
+                            DEFAULT: '#f4a261',
+                            100: '#401f04',
+                            200: '#803e09',
+                            300: '#c05e0d',
+                            400: '#f07e22',
+                            500: '#f4a261',
+                            600: '#f6b681',
+                            700: '#f8c8a1',
+                            800: '#fbdac0',
+                            900: '#fdede0'
+                        },
+                        burnt_sienna: {
+                            DEFAULT: '#e76f51',
+                            100: '#371107',
+                            200: '#6e220f',
+                            300: '#a43316',
+                            400: '#db441e',
+                            500: '#e76f51',
+                            600: '#ec8b73',
+                            700: '#f1a896',
+                            800: '#f5c5b9',
+                            900: '#fae2dc'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 25%, #0f1419 50%, #1e2837 75%, #0d1117 100%);
+            --color-primary: #00d2ff;
+            --color-secondary: #3a0ca3;
+            --color-accent: #ff006e;
+            --color-success: #06ffa5;
+            --color-warning: #ffbe0b;
+            --color-danger: #ff4757;
+            --color-dark: #0d1117;
+            --color-light: #f0f6fc;
+            --color-border: rgba(255, 255, 255, 0.1);
+            --color-surface: rgba(255, 255, 255, 0.05);
+            --color-overlay: rgba(0, 0, 0, 0.8);
+            --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            --shadow-xl: 0 35px 60px -12px rgba(0, 0, 0, 0.6);
+            --blur-bg: blur(20px);
+            --border-radius: 16px;
+        }
+
+        body { 
+            background: var(--bg-gradient) !important;
+            background-attachment: fixed !important;
+            background-size: 400% 400% !important;
+            animation: gradientShift 20s ease infinite !important;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+            color: var(--color-light) !important;
+            overflow: hidden !important;
+            height: 100vh;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            25% { background-position: 100% 50%; }
+            50% { background-position: 50% 100%; }
+            75% { background-position: 0% 0%; }
+        }
+
+        /* Top HUD */
+        .battle-hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1rem 2rem;
+            background: linear-gradient(180deg, var(--color-overlay) 0%, transparent 100%);
+            backdrop-filter: var(--blur-bg);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .hud-content {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            max-width: 1600px;
+            margin: 0 auto;
+            gap: 2rem;
+        }
+
+        .player-hud {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--color-surface);
+            backdrop-filter: var(--blur-bg);
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .player1-hud {
+            background: linear-gradient(135deg, rgba(0, 210, 255, 0.1) 0%, var(--color-surface) 100%);
+            border-color: var(--color-primary);
+        }
+
+        .player2-hud {
+            background: linear-gradient(135deg, rgba(255, 0, 110, 0.1) 0%, var(--color-surface) 100%);
+            border-color: var(--color-accent);
+            justify-self: end;
+        }
+
+        .player-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 210, 255, 0.3);
+        }
+
+        .player2-hud .player-avatar {
+            background: linear-gradient(135deg, var(--color-accent), var(--color-danger));
+            box-shadow: 0 4px 12px rgba(255, 0, 110, 0.3);
+        }
+
+        .player-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .player-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--color-light);
+        }
+
+        .hp-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .hp-bar {
+            width: 200px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .hp-fill {
+            height: 100%;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hp-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .player1-hp { 
+            background: linear-gradient(90deg, var(--color-primary), var(--color-success));
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+        }
+
+        .player2-hp { 
+            background: linear-gradient(90deg, var(--color-accent), var(--color-danger));
+            box-shadow: 0 0 10px rgba(255, 0, 110, 0.5);
+        }
+
+        .hp-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--color-light);
+            min-width: 60px;
+        }
+
+        /* Center HUD */
+        .center-hud {
+            text-align: center;
+        }
+
+        .battle-timer {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--color-warning);
+            text-shadow: 0 0 20px rgba(255, 190, 11, 0.5);
+            margin-bottom: 0.25rem;
+        }
+
+        .battle-status {
+            font-size: 0.875rem;
+            color: rgba(240, 246, 252, 0.7);
+            font-weight: 500;
+        }
+
+        .player-indicator {
+            margin-top: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        /* Connection Status */
+        .connection-status {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1001;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            font-size: 0.875rem;
+            backdrop-filter: var(--blur-bg);
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .connected {
+            background: linear-gradient(135deg, rgba(6, 255, 165, 0.2), rgba(6, 255, 165, 0.1));
+            border-color: var(--color-success);
+            color: var(--color-success);
+        }
+
+        .connecting {
+            background: linear-gradient(135deg, rgba(255, 190, 11, 0.2), rgba(255, 190, 11, 0.1));
+            border-color: var(--color-warning);
+            color: var(--color-warning);
+        }
+
+        .disconnected {
+            background: linear-gradient(135deg, rgba(255, 71, 87, 0.2), rgba(255, 71, 87, 0.1));
+            border-color: var(--color-danger);
+            color: var(--color-danger);
+        }
+
+        /* Battle Arena */
+        .battle-arena {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin-top: 2rem;
+        }
+
+        .arena-container {
+            position: relative;
+            padding: 2rem;
+            background: var(--color-surface);
+            backdrop-filter: var(--blur-bg);
+            border: 1px solid var(--color-border);
+            border-radius: calc(var(--border-radius) * 1.5);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .arena-container::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            background: linear-gradient(45deg, var(--color-primary), var(--color-secondary), var(--color-accent));
+            border-radius: calc(var(--border-radius) * 1.5);
+            z-index: -1;
+            opacity: 0.3;
+            animation: borderGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes borderGlow {
+            0% { opacity: 0.3; transform: scale(1); }
+            100% { opacity: 0.6; transform: scale(1.01); }
+        }
+
+        #battleCanvas {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: 
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                0 10px 30px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(135deg, #0a101c 0%, #1a2332 50%, #0f161f 100%);
+            position: relative;
+        }
+
+        /* Battle Stats */
+        .battle-stats {
+            position: absolute;
+            bottom: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 600px;
+            padding: 1rem 1.5rem;
+            background: var(--color-surface);
+            backdrop-filter: var(--blur-bg);
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .player-stats {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .player-stats:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .player1-stats {
+            border-color: var(--color-primary);
+            background: linear-gradient(135deg, rgba(0, 210, 255, 0.05), rgba(255, 255, 255, 0.02));
+        }
+
+        .player2-stats {
+            border-color: var(--color-accent);
+            background: linear-gradient(135deg, rgba(255, 0, 110, 0.05), rgba(255, 255, 255, 0.02));
+        }
+
+        .player-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--color-light);
+        }
+
+        .player-icon {
+            font-size: 1rem;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: rgba(240, 246, 252, 0.6);
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 0.875rem;
+            color: var(--color-light);
+        }
+
+        .battle-separator {
+            font-size: 1.5rem;
+            color: var(--color-warning);
+            text-shadow: 0 0 10px rgba(255, 190, 11, 0.5);
+        }
+
+        /* Battle Ready Overlay */
+        .battle-ready-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(13, 17, 23, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: var(--blur-bg);
+        }
+
+        .battle-ready-content {
+            text-align: center;
+            padding: 3rem;
+            background: var(--color-surface);
+            backdrop-filter: var(--blur-bg);
+            border: 1px solid var(--color-border);
+            border-radius: calc(var(--border-radius) * 1.5);
+            box-shadow: var(--shadow-xl);
+            max-width: 500px;
+        }
+
+        .battle-ready-content h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .countdown {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            font-weight: 800;
+            color: var(--color-warning);
+            margin: 1rem 0;
+            text-shadow: 0 0 30px rgba(255, 190, 11, 0.7);
+            animation: pulse 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .hud-content {
+                gap: 1rem;
+            }
+            
+            .hp-bar {
+                width: 150px;
+            }
+            
+            .battle-timer {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .battle-hud {
+                padding: 0.75rem 1rem;
+            }
+            
+            .hud-content {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+                text-align: center;
+            }
+            
+            .player-hud {
+                justify-self: center;
+            }
+            
+            .player2-hud {
+                justify-self: center;
+            }
+            
+            .hp-bar {
+                width: 120px;
+            }
+            
+            .battle-arena {
+                margin-top: 8rem;
+            }
+            
+            .arena-container {
+                padding: 1rem;
+            }
+            
+            .battle-stats {
+                position: relative;
+                bottom: auto;
+                margin-top: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Connection Status -->
+    <div id="connectionStatus" class="connection-status disconnected">
+        Connecting to Battle Server...
+    </div>
+
+    <!-- Battle HUD -->
+    <div class="battle-hud">
+        <div class="hud-content">
+            <div class="player-hud player1-hud">
+                <div class="player-avatar">🛡️</div>
+                <div class="player-info">
+                    <div id="player1Name" class="player-name">Player 1</div>
+                    <div class="hp-container">
+                        <div class="hp-bar">
+                            <div id="player1HP" class="hp-fill player1-hp" style="width: 100%;"></div>
+                        </div>
+                        <span id="player1HPText" class="hp-text">100/100</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="center-hud">
+                <div id="battleTimer" class="battle-timer">00:00</div>
+                <div class="battle-status">Battle Time</div>
+                <div id="playerIndicator" class="player-indicator" style="display: none;">
+                    You are Player 1
+                </div>
+            </div>
+            
+            <div class="player-hud player2-hud">
+                <div class="player-avatar">⚔️</div>
+                <div class="player-info">
+                    <div id="player2Name" class="player-name">Player 2</div>
+                    <div class="hp-container">
+                        <div class="hp-bar">
+                            <div id="player2HP" class="hp-fill player2-hp" style="width: 100%;"></div>
+                        </div>
+                        <span id="player2HPText" class="hp-text">100/100</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Battle Ready Overlay -->
+    <div id="battleReadyOverlay" class="battle-ready-overlay" style="display: none;">
+        <div class="battle-ready-content">
+            <h1>Battle Ready!</h1>
+            <p style="font-size: 1.25rem; margin-bottom: 2rem; color: rgba(240, 246, 252, 0.8);">
+                Both players connected. Battle starting in...
+            </p>
+            <div id="countdownTimer" class="countdown">3</div>
+            <p style="font-size: 1rem; color: rgba(240, 246, 252, 0.6);">
+                Prepare for combat!
+            </p>
+        </div>
+    </div>
+
+    <!-- Battle Arena -->
+    <div class="battle-arena">
+        <div class="arena-container">
+            <canvas id="battleCanvas"></canvas>
+            
+            <!-- Battle Stats -->
+            <div id="battleStats" class="battle-stats" style="display: none;">
+                <div class="stats-grid">
+                    <div class="player-stats player1-stats">
+                        <div class="player-header">
+                            <span class="player-icon">🛡️</span>
+                            <span id="player1StatName">Player 1</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Health</span>
+                            <span id="player1HPStat" class="stat-value">100</span>
+                        </div>
+                    </div>
+                    
+                    <div class="battle-separator">⚔️</div>
+                    
+                    <div class="player-stats player2-stats">
+                        <div class="player-header">
+                            <span class="player-icon">⚔️</span>
+                            <span id="player2StatName">Player 2</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Health</span>
+                            <span id="player2HPStat" class="stat-value">100</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Multiplayer variables
+        let socket = null;
+        let battleRoomId = null;
+        let playerNumber = null;
+        let isMultiplayer = false;
+        let battleStartTime = null;
+        let battleTimer = null;
+
+        // Check if this is a multiplayer battle
+        const urlParams = new URLSearchParams(window.location.search);
+        battleRoomId = urlParams.get('battleRoom');
+        
+        if (battleRoomId) {
+            isMultiplayer = true;
+            console.log('Initializing multiplayer battle:', battleRoomId);
+            initializeMultiplayer();
+        } else {
+            console.log('No battle room specified - redirecting to lobby');
+            window.location.href = '/lobby.html';
+        }
+
+        function initializeMultiplayer() {
+            socket = io();
+            
+            socket.on('connect', () => {
+                console.log('Connected to battle server:', socket.id);
+                updateConnectionStatus('connecting');
+                
+                // Join the battle room
+                socket.emit('join-battle', { battleRoomId });
+            });
+
+            socket.on('disconnect', (reason) => {
+                console.log('Disconnected from battle server:', reason);
+                updateConnectionStatus('disconnected');
+                
+                // Attempt to reconnect after a short delay
+                setTimeout(() => {
+                    if (!socket.connected) {
+                        console.log('Attempting to reconnect...');
+                        socket.connect();
+                    }
+                }, 2000);
+            });
+
+            socket.on('reconnect', () => {
+                console.log('Reconnected to battle server');
+                updateConnectionStatus('connecting');
+                
+                // Rejoin the battle room
+                socket.emit('join-battle', { battleRoomId });
+                
+                // Force sync after reconnection
+                setTimeout(() => {
+                    forceSyncUpdate();
+                }, 500);
+            });
+
+            socket.on('battle-joined', (data) => {
+                console.log('Joined battle:', data);
+                playerNumber = data.playerNumber;
+                console.log(`You are Player ${playerNumber}`);
+                
+                // Update connection status with player number
+                updateConnectionStatus('connected');
+                
+                // Update UI to show player role - add delay to ensure DOM is ready
+                setTimeout(() => {
+                    updatePlayerRole();
+                }, 100);
+            });
+
+            socket.on('battle-ready', (data) => {
+                console.log('Battle ready: Both players connected!', data);
+                showBattleReadyOverlay();
+            });
+
+            socket.on('battle-state-update', (data) => {
+                updateRemotePlayer(data);
+            });
+
+            socket.on('battle-action-broadcast', (data) => {
+                console.log('Battle action:', data);
+                const { action, damage, targetPlayer, gameState } = data;
+                
+                if (action === 'collision' && damage && targetPlayer) {
+                    // Apply collision damage to the target player
+                    if (targetPlayer === 1 && player1) {
+                        player1.custom.hp = Math.max(0, player1.custom.hp - damage);
+                        console.log(`Received collision: Player 1 took ${damage} damage, HP: ${player1.custom.hp}`);
+                    } else if (targetPlayer === 2 && player2) {
+                        player2.custom.hp = Math.max(0, player2.custom.hp - damage);
+                        console.log(`Received collision: Player 2 took ${damage} damage, HP: ${player2.custom.hp}`);
+                    }
+                    
+                    // Update battle stats display
+                    updateBattleStats();
+                } else if (action === 'victory') {
+                    // Handle battle end
+                    const winner = targetPlayer === 1 ? 2 : 1;
+                    console.log(`Battle ended! Player ${winner} wins!`);
+                    
+                    // Stop battle stats updates
+                    clearInterval(battleStatsInterval);
+                    updateBattleStats();
+                    
+                    // Stop physics simulation
+                    Matter.Runner.stop(runner);
+                } else if (action === 'draw') {
+                    // Handle draw scenario
+                    console.log('Battle ended in a draw!');
+                    
+                    // Stop battle stats updates
+                    clearInterval(battleStatsInterval);
+                    updateBattleStats();
+                    
+                    // Stop physics simulation
+                    Matter.Runner.stop(runner);
+                }
+            });
+
+            socket.on('battle-ended', (data) => {
+                console.log('Battle ended:', data);
+                // Handle battle end UI
+                showBattleEndOverlay(data);
+            });
+
+            socket.on('player-disconnected', (data) => {
+                console.log('Player disconnected:', data);
+                // Show notification that a player disconnected
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: var(--color-surface);
+                    border: 1px solid var(--color-warning);
+                    border-radius: var(--border-radius);
+                    padding: 1rem 2rem;
+                    color: var(--color-warning);
+                    font-weight: 600;
+                    z-index: 1500;
+                    backdrop-filter: var(--blur-bg);
+                `;
+                notification.textContent = data.message;
+                document.body.appendChild(notification);
+                
+                // Remove notification after 5 seconds
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 5000);
+            });
+
+            socket.on('battle-cleanup', (data) => {
+                console.log('Battle cleanup:', data);
+                // Redirect to lobby if battle room is being cleaned up
+                setTimeout(() => {
+                    window.location.href = '/lobby.html';
+                }, 2000);
+            });
+        }
+
+        function updateConnectionStatus(status) {
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.className = `connection-status ${status}`;
+            
+            switch(status) {
+                case 'connected':
+                    statusEl.textContent = `Connected • Player ${playerNumber || '?'}`;
+                    break;
+                case 'connecting':
+                    statusEl.textContent = 'Connecting...';
+                    break;
+                case 'disconnected':
+                    statusEl.textContent = 'Disconnected';
+                    break;
+            }
+        }
+
+        function updatePlayerRole() {
+            console.log('updatePlayerRole called with playerNumber:', playerNumber);
+            
+            // Visual indication of which player you are
+            const indicator = document.getElementById('playerIndicator');
+            const player1Name = document.getElementById('player1Name');
+            const player2Name = document.getElementById('player2Name');
+            const player1StatName = document.getElementById('player1StatName');
+            const player2StatName = document.getElementById('player2StatName');
+            
+            console.log('Found elements:', {
+                indicator: !!indicator,
+                player1Name: !!player1Name,
+                player2Name: !!player2Name,
+                player1StatName: !!player1StatName,
+                player2StatName: !!player2StatName
+            });
+            
+            if (playerNumber === 1) {
+                console.log('Setting up for Player 1');
+                // You are Player 1
+                if (player1Name) player1Name.textContent = 'You (Player 1)';
+                if (player2Name) player2Name.textContent = 'Player 2';
+                if (player1StatName) player1StatName.textContent = 'You (Player 1)';
+                if (player2StatName) player2StatName.textContent = 'Player 2';
+                if (indicator) {
+                    indicator.textContent = 'You are Player 1';
+                    indicator.style.display = 'block';
+                    indicator.style.color = 'var(--color-primary)';
+                }
+            } else if (playerNumber === 2) {
+                console.log('Setting up for Player 2');
+                // You are Player 2
+                if (player1Name) player1Name.textContent = 'Player 1';
+                if (player2Name) player2Name.textContent = 'You (Player 2)';
+                if (player1StatName) player1StatName.textContent = 'Player 1';
+                if (player2StatName) player2StatName.textContent = 'You (Player 2)';
+                if (indicator) {
+                    indicator.textContent = 'You are Player 2';
+                    indicator.style.display = 'block';
+                    indicator.style.color = 'var(--color-accent)';
+                }
+            } else {
+                console.log('No valid playerNumber:', playerNumber);
+            }
+        }
+
+        function showBattleReadyOverlay() {
+            const overlay = document.getElementById('battleReadyOverlay');
+            const countdown = document.getElementById('countdownTimer');
+            
+            overlay.style.display = 'flex';
+            
+            let count = 3;
+            countdown.textContent = count;
+            
+            const countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdown.textContent = count;
+                } else if (count === 0) {
+                    countdown.textContent = 'FIGHT!';
+                    countdown.style.color = 'var(--color-accent)';
+                } else {
+                    clearInterval(countdownInterval);
+                    overlay.style.display = 'none';
+                    startBattle();
+                }
+            }, 1000);
+        }
+
+        function startBattle() {
+            console.log('Battle starting!');
+            battleStartTime = Date.now();
+            
+            // Start battle timer
+            battleTimer = setInterval(updateBattleTimer, 1000);
+            
+            // Initialize the physics simulation
+            initializePhysics();
+        }
+
+        function updateBattleTimer() {
+            if (!battleStartTime) return;
+            
+            const elapsed = Math.floor((Date.now() - battleStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            
+            document.getElementById('battleTimer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateRemotePlayer(data) {
+            // Update the remote player's position and rotation
+            const { playerNumber, position, rotation, hp, forceSync } = data;
+            
+            console.log('Received remote player update:', { playerNumber, position, rotation, hp, forceSync });
+            
+            if (playerNumber === 1 && player1) {
+                // Update player 1's position (if we're player 2)
+                if (position) {
+                    // Use smoother interpolation for position updates
+                    const currentPos = player1.position;
+                    const distance = Math.sqrt(
+                        Math.pow(position.x - currentPos.x, 2) + 
+                        Math.pow(position.y - currentPos.y, 2)
+                    );
+                    
+                    // If positions are very far apart or it's a force sync, teleport
+                    if (distance > 100 || forceSync) {
+                        Matter.Body.setPosition(player1, { x: position.x, y: position.y });
+                        console.log('Teleported player1 to sync position:', position);
+                    } else {
+                        // Smooth interpolation for small differences
+                        const lerpFactor = 0.3;
+                        const newX = currentPos.x + (position.x - currentPos.x) * lerpFactor;
+                        const newY = currentPos.y + (position.y - currentPos.y) * lerpFactor;
+                        Matter.Body.setPosition(player1, { x: newX, y: newY });
+                    }
+                }
+                if (rotation !== undefined) {
+                    Matter.Body.setAngle(player1, rotation);
+                }
+                if (hp !== undefined) {
+                    player1.custom.hp = hp;
+                }
+            } else if (playerNumber === 2 && player2) {
+                // Update player 2's position (if we're player 1)
+                if (position) {
+                    // Use smoother interpolation for position updates
+                    const currentPos = player2.position;
+                    const distance = Math.sqrt(
+                        Math.pow(position.x - currentPos.x, 2) + 
+                        Math.pow(position.y - currentPos.y, 2)
+                    );
+                    
+                    // If positions are very far apart or it's a force sync, teleport
+                    if (distance > 100 || forceSync) {
+                        Matter.Body.setPosition(player2, { x: position.x, y: position.y });
+                        console.log('Teleported player2 to sync position:', position);
+                    } else {
+                        // Smooth interpolation for small differences
+                        const lerpFactor = 0.3;
+                        const newX = currentPos.x + (position.x - currentPos.x) * lerpFactor;
+                        const newY = currentPos.y + (position.y - currentPos.y) * lerpFactor;
+                        Matter.Body.setPosition(player2, { x: newX, y: newY });
+                    }
+                }
+                if (rotation !== undefined) {
+                    Matter.Body.setAngle(player2, rotation);
+                }
+                if (hp !== undefined) {
+                    player2.custom.hp = hp;
+                }
+            }
+        }
+
+        // Throttle position updates to prevent network spam but improve sync
+        let lastUpdateTime = 0;
+        const UPDATE_THROTTLE = 33; // Send updates every 33ms (30fps) - reduced from 50ms
+        
+        function sendBattleUpdate(position, rotation, hp) {
+            if (socket && isMultiplayer) {
+                const now = Date.now();
+                if (now - lastUpdateTime >= UPDATE_THROTTLE) {
+                    socket.emit('battle-update', {
+                        battleRoomId,
+                        playerNumber,
+                        position,
+                        rotation,
+                        hp
+                    });
+                    lastUpdateTime = now;
+                }
+            }
+        }
+
+        function sendBattleAction(action, damage, targetPlayer) {
+            if (socket && isMultiplayer) {
+                socket.emit('battle-action', {
+                    battleRoomId,
+                    playerNumber,
+                    action,
+                    damage,
+                    targetPlayer
+                });
+            }
+        }
+
+        // Physics simulation will be initialized here
+        let engine, world, render, runner;
+        let player1, player2;
+        let battleStatsInterval;
+
+        function initializePhysics() {
+            console.log('Initializing physics simulation...');
+            
+            // Create engine
+            engine = Matter.Engine.create();
+            world = engine.world;
+            engine.world.gravity.y = 0.5;
+
+            // Use fixed dimensions like index.html instead of full window
+            const ARENA_WIDTH = 900;
+            const ARENA_HEIGHT = 500;
+
+            // Create canvas renderer
+            const canvas = document.getElementById('battleCanvas');
+            render = Matter.Render.create({
+                canvas: canvas,
+                engine: engine,
+                options: {
+                    width: ARENA_WIDTH,
+                    height: ARENA_HEIGHT,
+                    wireframes: false,
+                    background: 'transparent',
+                    showAngleIndicator: false,
+                    showVelocity: false
+                }
+            });
+
+            // Create players with default weapons
+            createPlayers();
+            
+            // Start physics
+            runner = Matter.Runner.create();
+            Matter.Render.run(render);
+            
+            // Only start runner if tab is visible
+            if (isTabVisible) {
+                Matter.Runner.run(runner, engine);
+                physicsRunning = true;
+                console.log('Physics simulation started (tab visible)');
+            } else {
+                physicsRunning = false;
+                console.log('Physics simulation created but paused (tab not visible)');
+            }
+
+            // Add collision detection
+            setupCollisionDetection();
+
+            // Start battle stats updates
+            battleStatsInterval = setInterval(updateBattleStats, 100);
+
+            // Add physics update loop for multiplayer sync and velocity capping
+            Matter.Events.on(engine, 'beforeUpdate', () => {
+                // Only process if tab is visible to prevent desync
+                if (!isTabVisible) return;
+                
+                // Cap velocities and enforce boundaries with fixed arena dimensions
+                if (player1) {
+                    capVelocity(player1);
+                    enforceBoundaries(player1, ARENA_WIDTH, ARENA_HEIGHT);
+                    
+                    if (isMultiplayer && playerNumber === 1) {
+                        sendBattleUpdate(
+                            { x: player1.position.x, y: player1.position.y },
+                            player1.angle,
+                            player1.custom.hp
+                        );
+                    }
+                }
+                if (player2) {
+                    capVelocity(player2);
+                    enforceBoundaries(player2, ARENA_WIDTH, ARENA_HEIGHT);
+                    
+                    if (isMultiplayer && playerNumber === 2) {
+                        sendBattleUpdate(
+                            { x: player2.position.x, y: player2.position.y },
+                            player2.angle,
+                            player2.custom.hp
+                        );
+                    }
+                }
+            });
+
+            console.log('Physics simulation initialized!');
+        }
+        
+        function capVelocity(body) {
+            // For perfect bouncing balls, we only cap extremely high velocities to prevent physics engine issues
+            // but preserve the bouncing behavior by using much higher limits
+            const maxVelocity = 50; // Increased from 30 to allow more dynamic bouncing
+            const maxAngularVelocity = 0.5; // Allow some rotation for visual effect
+            
+            // Only cap if velocity is extreme (physics engine protection)
+            if (Math.abs(body.velocity.x) > maxVelocity) {
+                const sign = body.velocity.x > 0 ? 1 : -1;
+                Matter.Body.setVelocity(body, { x: maxVelocity * sign, y: body.velocity.y });
+            }
+            
+            if (Math.abs(body.velocity.y) > maxVelocity) {
+                const sign = body.velocity.y > 0 ? 1 : -1;
+                Matter.Body.setVelocity(body, { x: body.velocity.x, y: maxVelocity * sign });
+            }
+            
+            // Cap angular velocity only if extreme
+            if (Math.abs(body.angularVelocity) > maxAngularVelocity) {
+                const sign = body.angularVelocity > 0 ? 1 : -1;
+                Matter.Body.setAngularVelocity(body, maxAngularVelocity * sign);
+            }
+        }
+        
+        function enforceBoundaries(body, arenaWidth, arenaHeight) {
+            const margin = 80; // Distance from screen edge
+            
+            // Left boundary
+            if (body.position.x < margin) {
+                Matter.Body.setPosition(body, { x: margin, y: body.position.y });
+                if (body.velocity.x < 0) {
+                    Matter.Body.setVelocity(body, { x: Math.abs(body.velocity.x), y: body.velocity.y });
+                }
+            }
+            // Right boundary
+            if (body.position.x > arenaWidth - margin) {
+                Matter.Body.setPosition(body, { x: arenaWidth - margin, y: body.position.y });
+                if (body.velocity.x > 0) {
+                    Matter.Body.setVelocity(body, { x: -Math.abs(body.velocity.x), y: body.velocity.y });
+                }
+            }
+            // Top boundary
+            if (body.position.y < margin) {
+                Matter.Body.setPosition(body, { x: body.position.x, y: margin });
+                if (body.velocity.y < 0) {
+                    Matter.Body.setVelocity(body, { x: body.velocity.x, y: Math.abs(body.velocity.y) });
+                }
+            }
+            // Bottom boundary
+            if (body.position.y > arenaHeight - margin) {
+                Matter.Body.setPosition(body, { x: body.position.x, y: arenaHeight - margin });
+                if (body.velocity.y > 0) {
+                    Matter.Body.setVelocity(body, { x: body.velocity.x, y: -Math.abs(body.velocity.y) });
+                }
+            }
+        }
+
+        function createPlayers() {
+            console.log('Creating players as perfect bouncing balls...');
+            
+            // Use fixed arena dimensions
+            const ARENA_WIDTH = 900;
+            const ARENA_HEIGHT = 500;
+            
+            // Perfect physics options for bouncing balls - no friction, perfect restitution
+            const perfectPhysicsOptions = {
+                frictionAir: 0,        // No air resistance
+                restitution: 1.0,      // Perfect bounce - no energy loss
+                friction: 0,           // No surface friction
+                density: 0.001,        // Light density
+                inertia: Infinity      // Prevent rotation from affecting linear motion
+            };
+            
+            // Create player 1 as a simple bouncing ball (left side)
+            player1 = Matter.Bodies.circle(150, ARENA_HEIGHT/2, 30, {
+                render: { 
+                    fillStyle: 'rgba(0, 210, 255, 0.8)',
+                    strokeStyle: '#00d2ff',
+                    lineWidth: 3
+                },
+                label: 'player1',
+                ...perfectPhysicsOptions
+            });
+            
+            // Add custom properties
+            player1.custom = { hp: 100, maxHp: 100 };
+            
+            // Set initial velocity for player 1
+            Matter.Body.setVelocity(player1, { x: 12, y: 8 });
+
+            // Create player 2 as a simple bouncing ball (right side)
+            player2 = Matter.Bodies.circle(ARENA_WIDTH - 150, ARENA_HEIGHT/2, 30, {
+                render: { 
+                    fillStyle: 'rgba(255, 0, 110, 0.8)',
+                    strokeStyle: '#ff006e',
+                    lineWidth: 3
+                },
+                label: 'player2',
+                ...perfectPhysicsOptions
+            });
+            
+            // Add custom properties
+            player2.custom = { hp: 100, maxHp: 100 };
+            
+            // Set initial velocity for player 2
+            Matter.Body.setVelocity(player2, { x: -12, y: -8 });
+
+            // Create perfect bouncing boundaries
+            const wallThickness = 50;
+            const perfectWallOptions = {
+                isStatic: true,
+                restitution: 1.0,      // Perfect bounce off walls
+                friction: 0            // No friction on walls
+            };
+            
+            const boundaries = [
+                // Left wall
+                Matter.Bodies.rectangle(-wallThickness/2, ARENA_HEIGHT/2, wallThickness, ARENA_HEIGHT, { 
+                    render: { fillStyle: 'rgba(0, 210, 255, 0.3)' },
+                    ...perfectWallOptions
+                }),
+                // Right wall
+                Matter.Bodies.rectangle(ARENA_WIDTH + wallThickness/2, ARENA_HEIGHT/2, wallThickness, ARENA_HEIGHT, { 
+                    render: { fillStyle: 'rgba(255, 0, 110, 0.3)' },
+                    ...perfectWallOptions
+                }),
+                // Ground
+                Matter.Bodies.rectangle(ARENA_WIDTH/2, ARENA_HEIGHT + wallThickness/2, ARENA_WIDTH, wallThickness, { 
+                    render: { fillStyle: 'rgba(24, 35, 56, 0.4)' },
+                    ...perfectWallOptions
+                }),
+                // Ceiling
+                Matter.Bodies.rectangle(ARENA_WIDTH/2, -wallThickness/2, ARENA_WIDTH, wallThickness, { 
+                    render: { fillStyle: 'rgba(24, 35, 56, 0.4)' },
+                    ...perfectWallOptions
+                })
+            ];
+
+            // Add everything to world (no constraints needed for simple balls)
+            Matter.World.add(world, [player1, player2, ...boundaries]);
+
+            console.log('Perfect bouncing balls created with boundaries');
+            
+            // Add basic controls for applying forces to the balls
+            setupControls();
+        }
+
+        function setupControls() {
+            const keys = {};
+            const keyPressed = {}; // Track when keys are first pressed
+            const impulseStrength = 0.02; // Impulse strength for ball control
+            
+            document.addEventListener('keydown', (e) => {
+                if (!keys[e.key]) {
+                    keyPressed[e.key] = true; // Mark as newly pressed
+                }
+                keys[e.key] = true;
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                keys[e.key] = false;
+                keyPressed[e.key] = false;
+            });
+
+            // Control loop - apply impulses for more responsive ball control
+            setInterval(() => {
+                if (playerNumber === 1 && player1) {
+                    // Player 1 controls (WASD) - apply impulses for quick response
+                    if (keyPressed['w'] || keyPressed['W']) {
+                        Matter.Body.applyForce(player1, player1.position, { x: 0, y: -impulseStrength });
+                        keyPressed['w'] = keyPressed['W'] = false;
+                    }
+                    if (keyPressed['s'] || keyPressed['S']) {
+                        Matter.Body.applyForce(player1, player1.position, { x: 0, y: impulseStrength });
+                        keyPressed['s'] = keyPressed['S'] = false;
+                    }
+                    if (keyPressed['a'] || keyPressed['A']) {
+                        Matter.Body.applyForce(player1, player1.position, { x: -impulseStrength, y: 0 });
+                        keyPressed['a'] = keyPressed['A'] = false;
+                    }
+                    if (keyPressed['d'] || keyPressed['D']) {
+                        Matter.Body.applyForce(player1, player1.position, { x: impulseStrength, y: 0 });
+                        keyPressed['d'] = keyPressed['D'] = false;
+                    }
+                } else if (playerNumber === 2 && player2) {
+                    // Player 2 controls (Arrow keys) - apply impulses for quick response
+                    if (keyPressed['ArrowUp']) {
+                        Matter.Body.applyForce(player2, player2.position, { x: 0, y: -impulseStrength });
+                        keyPressed['ArrowUp'] = false;
+                    }
+                    if (keyPressed['ArrowDown']) {
+                        Matter.Body.applyForce(player2, player2.position, { x: 0, y: impulseStrength });
+                        keyPressed['ArrowDown'] = false;
+                    }
+                    if (keyPressed['ArrowLeft']) {
+                        Matter.Body.applyForce(player2, player2.position, { x: -impulseStrength, y: 0 });
+                        keyPressed['ArrowLeft'] = false;
+                    }
+                    if (keyPressed['ArrowRight']) {
+                        Matter.Body.applyForce(player2, player2.position, { x: impulseStrength, y: 0 });
+                        keyPressed['ArrowRight'] = false;
+                    }
+                }
+            }, 16);
+        }
+
+        function setupCollisionDetection() {
+            Matter.Events.on(engine, 'collisionStart', (event) => {
+                const pairs = event.pairs;
+                
+                for (let i = 0; i < pairs.length; i++) {
+                    const { bodyA, bodyB } = pairs[i];
+                    
+                    // Ball-to-ball collision (Player 1 hits Player 2)
+                    if ((bodyA.label === 'player1' && bodyB.label === 'player2') ||
+                        (bodyA.label === 'player2' && bodyB.label === 'player1')) {
+                        
+                        console.log('Ball collision detected!');
+                        
+                        // Determine which player hit which
+                        let attacker, defender;
+                        if (bodyA.label === 'player1') {
+                            attacker = player1;
+                            defender = player2;
+                        } else {
+                            attacker = player2;
+                            defender = player1;
+                        }
+                        
+                        // Calculate collision intensity based on relative velocity
+                        const relativeVelocity = Math.sqrt(
+                            Math.pow(bodyA.velocity.x - bodyB.velocity.x, 2) + 
+                            Math.pow(bodyA.velocity.y - bodyB.velocity.y, 2)
+                        );
+                        
+                        // Base damage on collision intensity (minimum 1, maximum 10)
+                        const damage = Math.max(1, Math.min(10, Math.floor(relativeVelocity / 3)));
+                        
+                        console.log(`Collision impact: ${relativeVelocity.toFixed(2)}, Damage: ${damage}`);
+                        
+                        // In multiplayer, determine who can deal damage based on who initiated
+                        let canDealDamage = true;
+                        if (isMultiplayer) {
+                            // Both players can deal damage in ball collisions
+                            // But we need to prevent double damage, so only one client processes it
+                            canDealDamage = (playerNumber === 1); // Player 1 always processes collisions
+                        }
+                        
+                        if (canDealDamage) {
+                            // Both players take damage in a collision
+                            const damage1 = Math.floor(damage * 0.7); // Slightly less damage to attacker
+                            const damage2 = damage;
+                            
+                            player1.custom.hp = Math.max(0, player1.custom.hp - damage1);
+                            player2.custom.hp = Math.max(0, player2.custom.hp - damage2);
+                            
+                            console.log(`Collision damage - Player1: -${damage1} HP (${player1.custom.hp} remaining), Player2: -${damage2} HP (${player2.custom.hp} remaining)`);
+                            
+                            // Send battle actions to sync damage
+                            if (isMultiplayer) {
+                                sendBattleAction('collision', damage1, 1);
+                                sendBattleAction('collision', damage2, 2);
+                            }
+                            
+                            // Check for victory conditions
+                            if (player1.custom.hp <= 0 && player2.custom.hp <= 0) {
+                                console.log('Draw! Both players eliminated!');
+                                if (isMultiplayer) {
+                                    sendBattleAction('draw', 0, 0);
+                                } else {
+                                    endBattle(0); // Draw
+                                }
+                            } else if (player1.custom.hp <= 0) {
+                                console.log('Player2 wins!');
+                                if (isMultiplayer) {
+                                    sendBattleAction('victory', 0, 1);
+                                } else {
+                                    endBattle(2);
+                                }
+                            } else if (player2.custom.hp <= 0) {
+                                console.log('Player1 wins!');
+                                if (isMultiplayer) {
+                                    sendBattleAction('victory', 0, 2);
+                                } else {
+                                    endBattle(1);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function endBattle(winner) {
+            if (winner === 0) {
+                console.log('Battle ended in a draw!');
+            } else {
+                console.log(`Battle ended! Player ${winner} wins!`);
+            }
+            
+            clearInterval(battleStatsInterval);
+            updateBattleStats();
+            Matter.Runner.stop(runner);
+            
+            // Show victory/draw overlay
+            const message = winner === 0 ? 'Draw!' : `Player ${winner} Wins!`;
+            const subtitle = winner === 0 ? 'Both players eliminated!' : `Player ${winner} is victorious!`;
+            
+            showBattleEndOverlay({
+                winner: winner,
+                message: message,
+                subtitle: subtitle
+            });
+        }
+
+        function updateBattleStats() {
+            if (player1) {
+                const hp1 = Math.max(0, player1.custom.hp);
+                document.getElementById('player1HP').style.width = `${hp1}%`;
+                document.getElementById('player1HPText').textContent = `${hp1}/100`;
+                document.getElementById('player1HPStat').textContent = `${hp1}`;
+            }
+            
+            if (player2) {
+                const hp2 = Math.max(0, player2.custom.hp);
+                document.getElementById('player2HP').style.width = `${hp2}%`;
+                document.getElementById('player2HPText').textContent = `${hp2}/100`;
+                document.getElementById('player2HPStat').textContent = `${hp2}`;
+            }
+        }
+
+        function showBattleEndOverlay(data) {
+            // Create modern battle end overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'battle-ready-overlay';
+            overlay.innerHTML = `
+                <div class="battle-ready-content">
+                    <h1 style="background: linear-gradient(135deg, ${data.winner === 1 ? 'var(--color-primary)' : data.winner === 2 ? 'var(--color-accent)' : 'var(--color-warning)'}, var(--color-success)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                        ${data.message}
+                    </h1>
+                    <p style="font-size: 1.25rem; margin-bottom: 2rem; color: rgba(240, 246, 252, 0.8);">
+                        ${data.subtitle || 'Battle Complete!'}
+                    </p>
+                    <button onclick="window.location.href='/lobby.html'" 
+                            style="
+                                padding: 1rem 2rem;
+                                background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+                                border: none;
+                                border-radius: var(--border-radius);
+                                color: var(--color-light);
+                                font-weight: 700;
+                                font-size: 1rem;
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                                box-shadow: var(--shadow-lg);
+                            "
+                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-xl)';"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-lg)';">
+                        Return to Lobby
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        // Handle window resize - keep fixed arena dimensions
+        window.addEventListener('resize', () => {
+            if (render) {
+                // Keep fixed dimensions regardless of window size
+                const ARENA_WIDTH = 900;
+                const ARENA_HEIGHT = 500;
+                
+                render.canvas.width = ARENA_WIDTH;
+                render.canvas.height = ARENA_HEIGHT;
+                render.options.width = ARENA_WIDTH;
+                render.options.height = ARENA_HEIGHT;
+            }
+        });
+
+        // Tab visibility handling to prevent desync
+        let isTabVisible = true;
+        let physicsRunning = false;
+        
+        // Handle tab visibility changes
+        document.addEventListener('visibilitychange', function() {
+            isTabVisible = !document.hidden;
+            console.log('Tab visibility changed:', isTabVisible ? 'visible' : 'hidden');
+            
+            if (isTabVisible) {
+                // Tab became visible - resume physics and sync
+                if (physicsRunning && engine && runner) {
+                    // Make sure the runner is properly started
+                    Matter.Runner.stop(runner); // Stop first to avoid double-running
+                    Matter.Runner.run(runner, engine);
+                    console.log('Resumed physics simulation');
+                }
+                
+                // Force sync update when tab becomes visible
+                if (isMultiplayer && playerNumber && (player1 || player2)) {
+                    setTimeout(() => {
+                        forceSyncUpdate();
+                    }, 100);
+                }
+                
+                // Reconnect if disconnected
+                if (socket && !socket.connected) {
+                    console.log('Attempting to reconnect...');
+                    socket.connect();
+                }
+            } else {
+                // Tab became hidden - pause physics to prevent desync
+                if (physicsRunning && runner) {
+                    Matter.Runner.stop(runner);
+                    console.log('Paused physics simulation');
+                }
+            }
+        });
+        
+        // Force a sync update
+        function forceSyncUpdate() {
+            if (!isMultiplayer || !playerNumber) return;
+            
+            const player = playerNumber === 1 ? player1 : player2;
+            if (player) {
+                console.log('Forcing sync update for player', playerNumber);
+                socket.emit('battle-update', {
+                    battleRoomId,
+                    playerNumber,
+                    position: { x: player.position.x, y: player.position.y },
+                    rotation: player.angle,
+                    hp: player.custom.hp,
+                    forceSync: true // Flag to indicate this is a sync update
+                });
+            }
+        }
+    </script>
+</body>
+</html> 
